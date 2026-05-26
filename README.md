@@ -13,7 +13,7 @@ Cold-boot to interactive UI target: **< 5 seconds**.
 - **Display**: 7" MIPI DSI touchscreen (1024×600, Goodix GT911)
 - **Connectivity**: RTL8821CS (Wi-Fi 5 + BT 5), USB-C OTG, USB 2.0 ×2
 - **Storage**: microSD card (bootable image written with Etcher)
-- **Power**: USB-C PD → 12 V trigger → barrel jack, external 21700 power bank
+- **Power**: USB-C PD → 12 V trigger → barrel jack
 
 ---
 
