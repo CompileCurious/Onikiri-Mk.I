@@ -37,40 +37,55 @@
 		reg = <0x0 0x40000000 0x0 0x40000000>;
 	};
 
+	// ── LEDs ───────────────────────────────────────────────────────────────
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-status {
+			label = "status";
+			gpios = <&pio 7 5 GPIO_ACTIVE_HIGH>;  // PH5 — green LED
+			linux,default-trigger = "heartbeat";
+			default-state = "on";
+		};
+	};
+
 	// ── Power regulators ───────────────────────────────────────────────────
 
-	vcc_5v: regulator-vcc-5v {
+	reg_vcc5v: regulator-vcc5v {
 		compatible = "regulator-fixed";
-		regulator-name = "VCC5V";
+		regulator-name = "vcc-5v";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		regulator-always-on;
 	};
 
-	vcc_3v3: regulator-vcc-3v3 {
+	reg_vcc33_wifi: regulator-vcc33-wifi {
 		compatible = "regulator-fixed";
-		regulator-name = "VCC3V3";
+		regulator-name = "vcc33-wifi";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-always-on;
-		vin-supply = <&vcc_5v>;
+		vin-supply = <&reg_vcc5v>;
 	};
 
-	vcc_1v8: regulator-vcc-1v8 {
+	reg_vcc_wifi_io: regulator-vcc-wifi-io {
 		compatible = "regulator-fixed";
-		regulator-name = "VCC1V8";
+		regulator-name = "vcc-wifi-io";
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
 		regulator-always-on;
-		vin-supply = <&vcc_3v3>;
+		vin-supply = <&reg_vcc33_wifi>;
 	};
 
 	// ── Wi-Fi power / reset ────────────────────────────────────────────────
 
-	wifi_pwrseq: pwrseq-wifi {
+	wifi_pwrseq: wifi-pwrseq {
 		compatible = "mmc-pwrseq-simple";
+		clocks = <&rtc 1>;
+		clock-names = "ext_clock";
 		reset-gpios = <&pio 6 18 GPIO_ACTIVE_LOW>;  // PG18 — CB1 WiFi reset
-		post-power-on-delay-ms = <50>;
+		post-power-on-delay-ms = <200>;
 	};
 
 	// ── HDMI connector (internal 7" IPS, 1024×600) ────────────────────────
@@ -94,7 +109,71 @@
 		brightness-levels = <0 16 32 48 64 80 96 128 160 192 224 255>;
 		default-brightness-level = <9>;
 		enable-gpios = <&pio 7 19 GPIO_ACTIVE_HIGH>;  // PH19 backlight enable
-		power-supply = <&vcc_3v3>;
+		power-supply = <&reg_dldo1>;
+	};
+};
+
+// ── CPU / GPU voltage supplies ─────────────────────────────────────────────────
+
+&cpu0 {
+	cpu-supply = <&reg_dcdc2>;
+};
+
+&gpu {
+	mali-supply = <&reg_dcdc1>;
+	status = "okay";
+};
+
+// ── R_I2C — AXP313A PMIC ───────────────────────────────────────────────────────
+
+&r_i2c {
+	pinctrl-names = "default";
+	pinctrl-0 = <&r_i2c_pins>;
+	status = "okay";
+
+	axp313a: pmic@36 {
+		compatible = "x-powers,axp313a";
+		reg = <0x36>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		regulators {
+			reg_dcdc1: dcdc1 {
+				regulator-name = "vdd-gpu-sys";
+				regulator-min-microvolt = <810000>;
+				regulator-max-microvolt = <990000>;
+				regulator-always-on;
+			};
+
+			reg_dcdc2: dcdc2 {
+				regulator-name = "vdd-cpu";
+				regulator-min-microvolt = <810000>;
+				regulator-max-microvolt = <1100000>;
+				regulator-ramp-delay = <200>;
+				regulator-always-on;
+			};
+
+			reg_dcdc3: dcdc3 {
+				regulator-name = "vcc-dram";
+				regulator-min-microvolt = <1350000>;
+				regulator-max-microvolt = <1500000>;
+				regulator-always-on;
+			};
+
+			reg_aldo1: aldo1 {
+				regulator-name = "vcc-1v8-pll";
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-always-on;
+			};
+
+			reg_dldo1: dldo1 {
+				regulator-name = "vcc-3v3-io";
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+		};
 	};
 };
 
@@ -131,9 +210,9 @@
 &mmc0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mmc0_pins>;
-	vmmc-supply  = <&vcc_3v3>;
-	vqmmc-supply = <&vcc_3v3>;
-	cd-gpios     = <&pio 5 6 GPIO_ACTIVE_LOW>;
+	vmmc-supply  = <&reg_dldo1>;
+	// Card detection pin not connected on CB1
+	broken-cd;
 	bus-width    = <4>;
 	max-frequency = <50000000>;
 	status = "okay";
@@ -144,18 +223,17 @@
 &mmc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mmc1_pins>;
-	vmmc-supply  = <&vcc_3v3>;
-	vqmmc-supply = <&vcc_1v8>;
+	vmmc-supply  = <&reg_vcc33_wifi>;
+	vqmmc-supply = <&reg_vcc_wifi_io>;
 	mmc-pwrseq   = <&wifi_pwrseq>;
 	bus-width    = <4>;
 	max-frequency = <50000000>;
 	non-removable;
+	mmc-ddr-1_8v;
 	status = "okay";
 
-	rtl8821cs: wifi@1 {
+	rtl8189ftv: wifi@1 {
 		reg = <1>;
-		interrupt-parent = <&pio>;
-		interrupts = <6 15 IRQ_TYPE_LEVEL_LOW>;  // PG15 OOB IRQ
 	};
 };
 
@@ -167,8 +245,8 @@
 };
 
 &usbphy {
-	usb0_vbus-supply = <&vcc_5v>;
-	usb1_vbus-supply = <&vcc_5v>;
+	usb0_vbus-supply = <&reg_vcc5v>;
+	usb1_vbus-supply = <&reg_vcc5v>;
 	status = "okay";
 };
 
@@ -208,7 +286,7 @@
 };
 
 &hdmi {
-	hvcc-supply = <&vcc_3v3>;
+	hvcc-supply = <&reg_dldo1>;
 	status = "okay";
 };
 
