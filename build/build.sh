@@ -101,8 +101,10 @@ build_kernel() {
     cp "${REPO_ROOT}/kernel/h616_onikiri_defconfig" \
         "${KERNEL_SRC}/arch/arm64/configs/h616_onikiri_defconfig"
 
-    # Copy our DTS
+    # Copy our DTS and HDMI overlay
     cp "${REPO_ROOT}/kernel/dts/sun50i-h616-onikiri.dts" \
+        "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
+    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-hdmi.dtsi" \
         "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
 
     # Add board to allwinner DTS Makefile if not present

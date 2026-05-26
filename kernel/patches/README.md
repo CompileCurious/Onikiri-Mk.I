@@ -5,11 +5,16 @@ Source: https://github.com/armbian/build/tree/main/patch/kernel/archive/sunxi-6.
 
 ## Patch Set
 
-### Display & HDMI
+### Display & HDMI (Driver Support)
 - **001-h616-hdmi-phy.patch** — Adds sun50i-h616 HDMI PHY driver support
 - **002-de33-clocks.patch** — Display Engine 3.3 (DE33) clock controller support
-- **010-h616-dts-hdmi.patch** — Adds HDMI, DE, TCON, mixer nodes to sun50i-h616.dtsi
-- **011-cb1-hdmi.patch** — Enables HDMI on BigTreeTech CB1 module specifically
+
+### Device Tree (DTS Overlay)
+Instead of patching sun50i-h616.dtsi (fragile across kernel versions), we use a
+DTSI overlay approach:
+- **kernel/dts/sun50i-h616-hdmi.dtsi** — Adds HDMI, DE, TCON, mixer nodes as overlay
+- Included by board DTS files that need HDMI support
+- More robust than patching mainline DTSI files
 
 ### Backlight & PWM
 - **020-h616-pwm.patch** — Enhanced PWM driver for H616 (1313 lines, backlight control)
@@ -25,12 +30,19 @@ for patch in kernel/patches/*.patch; do
 done
 ```
 
+The HDMI DTSI overlay is copied alongside the board DTS and included directly.
+
 ## Compatibility
 
-These patches are from the 6.12 kernel series but apply cleanly to 6.6.30 with minimal/no conflicts since H616 support is minimal in both versions. If a patch fails to apply, the build script will halt with an error.
+Driver patches (001, 002, 020, 021) are from the 6.12 kernel series but apply
+cleanly to 6.6.30 with minimal conflicts since H616 driver support is new in both.
+
+The DTSI overlay approach avoids fragile mainline file patching — it adds nodes
+via DTS include instead of patching sun50i-h616.dtsi directly.
 
 ## Notes
 
-- PWM patch (020) is large because it's a comprehensive driver rewrite
-- HDMI depends on DE (display engine) being enabled first  
-- The CB1 patch (011) may need `reg_aldo1` power supply from PMIC DTS
+- PWM patch (020) is large because it's a comprehensive driver rewrite  
+- HDMI depends on DE (display engine) being enabled first
+- DTSI overlay is version-agnostic and works across kernel versions
+- No CB1-specific patch needed — board DTS enables HDMI directly
