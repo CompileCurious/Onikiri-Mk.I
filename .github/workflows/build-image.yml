@@ -102,6 +102,12 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+      # ── Compress image for release (GitHub release assets capped at 2 GiB) ─
+      - name: Compress image for release
+        run: |
+          xz -T0 -9 -k "${IMAGE_PATH}"
+          echo "COMPRESSED_IMAGE_PATH=${IMAGE_PATH}.xz" >> "$GITHUB_ENV"
+
       # ── Create GitHub prerelease ─────────────────────────────────────────
       - name: Create prerelease and upload image
         uses: softprops/action-gh-release@v2
@@ -122,13 +128,17 @@ jobs:
 
             ### Flashing
 
-            Flash `${{ steps.date.outputs.IMG_NAME }}` directly to a microSD card (≥ 4 GB):
+            Flash `${{ steps.date.outputs.IMG_NAME }}.xz` to a microSD card (≥ 4 GB).
+            Decompress first, or use a tool that handles `.xz` directly:
 
             ```bash
-            # balenaEtcher (GUI) — open the .img and select your card
-
-            # or dd (CLI, replace /dev/sdX with your card)
+            # Decompress then flash
+            xz -d ${{ steps.date.outputs.IMG_NAME }}.xz
             sudo dd if=${{ steps.date.outputs.IMG_NAME }} of=/dev/sdX bs=4M status=progress conv=fsync
+            sudo sync
+
+            # or flash in one step (no temp file needed)
+            xzcat ${{ steps.date.outputs.IMG_NAME }}.xz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
             sudo sync
             ```
 
@@ -141,6 +151,6 @@ jobs:
             | p3 | ext4 | remainder | OverlayFS upper + engagement data |
 
             > **This is a pre-release build.** Intended for authorised security testing on hardware you own or have explicit written permission to test.
-          files: ${{ env.IMAGE_PATH }}
+          files: ${{ env.COMPRESSED_IMAGE_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
