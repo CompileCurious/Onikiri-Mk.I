@@ -1,0 +1,59 @@
+# Onikiri Mk.I — Target system packages
+# Required on the root filesystem (ARM64 target, not build host)
+# Install via cross-rootfs or buildroot package selection.
+#
+# Format: package_name  # notes
+
+# ── Python runtime ────────────────────────────────────────────────────────────
+python3                 # 3.10 minimum
+python3-pip             # for module installation
+python3-kivy            # UI framework (or build from source for ARM)
+python3-scapy           # packet manipulation (MITM / recon)
+
+# ── Wi-Fi tools ───────────────────────────────────────────────────────────────
+iw                      # nl80211 interface management
+wireless-tools          # iwconfig, iwlist (legacy fallback)
+aircrack-ng             # airodump-ng, aireplay-ng, airmon-ng
+wpa_supplicant          # managed mode association
+
+# ── Network tools ─────────────────────────────────────────────────────────────
+nmap                    # port and service scanning
+masscan                 # high-speed scan
+dsniff                  # arpspoof, dnsspoof
+mitmproxy               # transparent HTTPS proxy
+iptables                # NAT / packet filter rules
+iproute2                # ip, ss, tc
+udhcpc                  # BusyBox DHCP client (included with BusyBox)
+net-tools               # ifconfig, route (legacy compat)
+curl                    # HTTP client (dropper download)
+wget                    # HTTP client (dropper download)
+socat                   # port forwarding, relay
+
+# ── Bluetooth ─────────────────────────────────────────────────────────────────
+bluez                   # hciconfig, hcitool, bluetoothctl, sdptool
+bluez-tools             # btmgmt
+
+# ── USB HID ───────────────────────────────────────────────────────────────────
+# No extra packages — uses kernel ConfigFS (built-in)
+
+# ── System utilities (BusyBox provides most; extras listed) ──────────────────
+busybox-static          # init, sh, mount, ifconfig, dd, etc.
+kmod                    # modprobe, lsmod (if not in BusyBox)
+e2fsprogs               # mkfs.ext4, e2fsck (for data partition)
+squashfs-tools          # unsquashfs (debug use only on target)
+dosfstools              # mkfs.fat (if re-formatting boot partition)
+util-linux              # losetup, blkid, findmnt
+
+# ── Python module dependencies ────────────────────────────────────────────────
+python3-asyncio         # (stdlib, included)
+python3-ipaddress       # (stdlib, included)
+python3-impacket        # SMB / NTLM recon helpers
+python3-requests        # HTTP library (optional modules)
+
+# ── Build-time only (host, not target) ────────────────────────────────────────
+# aarch64-linux-gnu-gcc
+# make, bc, bison, flex, libssl-dev
+# squashfs-tools (mksquashfs)
+# parted, dosfstools
+# u-boot-tools (mkimage)
+# git

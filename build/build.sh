@@ -1,0 +1,255 @@
+#!/usr/bin/env bash
+# build/build.sh — Onikiri Mk.I top-level build script
+#
+# Builds the complete system from source:
+#   1. Cross-compile Linux kernel + DTB
+#   2. Assemble root filesystem (SquashFS)
+#   3. Produce bootable microSD image
+#
+# Requirements (host):
+#   aarch64-linux-gnu-gcc, make, bc, bison, flex, libssl-dev
+#   squashfs-tools, dosfstools, parted, genimage
+#   Python 3.10+ (for supervisor/UI test)
+#
+# Usage:
+#   ./build/build.sh [--clean] [--kernel-only] [--image-only]
+#
+# Output:
+#   out/onikiri-mkI-YYYYMMDD.img  — ready to flash with Etcher
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BUILD_DIR="${REPO_ROOT}/out"
+KERNEL_SRC="${BUILD_DIR}/linux"
+ROOTFS_STAGE="${BUILD_DIR}/rootfs_stage"
+SQUASHFS_IMG="${BUILD_DIR}/rootfs.sqfs"
+FINAL_IMG="${BUILD_DIR}/onikiri-mkI-$(date +%Y%m%d).img"
+
+CROSS_COMPILE="${CROSS_COMPILE:-aarch64-linux-gnu-}"
+ARCH=arm64
+JOBS="${JOBS:-$(nproc)}"
+
+KERNEL_REPO="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
+KERNEL_TAG="v6.6.30"
+
+UBOOT_REPO="https://github.com/u-boot/u-boot.git"
+UBOOT_TAG="v2024.04"
+
+# ── Argument parsing ──────────────────────────────────────────────────────────
+OPT_CLEAN=0
+OPT_KERNEL_ONLY=0
+OPT_IMAGE_ONLY=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --clean)       OPT_CLEAN=1 ;;
+        --kernel-only) OPT_KERNEL_ONLY=1 ;;
+        --image-only)  OPT_IMAGE_ONLY=1 ;;
+        *) echo "Unknown option: $arg" >&2; exit 1 ;;
+    esac
+done
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+log() { echo "[build] $*"; }
+die() { echo "[build] ERROR: $*" >&2; exit 1; }
+
+require_tool() {
+    command -v "$1" >/dev/null 2>&1 || die "required tool not found: $1"
+}
+
+# ── Checks ────────────────────────────────────────────────────────────────────
+check_deps() {
+    log "Checking build dependencies"
+    require_tool "${CROSS_COMPILE}gcc"
+    require_tool make
+    require_tool mksquashfs
+    require_tool parted
+    require_tool mkfs.fat
+    require_tool mkfs.ext4
+    require_tool dd
+    require_tool python3
+}
+
+# ── Clean ─────────────────────────────────────────────────────────────────────
+do_clean() {
+    log "Cleaning build output"
+    rm -rf "${BUILD_DIR:?}"
+}
+
+# ── Kernel build ──────────────────────────────────────────────────────────────
+build_kernel() {
+    log "Building kernel ${KERNEL_TAG}"
+    mkdir -p "${BUILD_DIR}"
+
+    if [[ ! -d "${KERNEL_SRC}" ]]; then
+        git clone --depth=1 --branch="${KERNEL_TAG}" \
+            "${KERNEL_REPO}" "${KERNEL_SRC}"
+    fi
+
+    # Copy our defconfig
+    cp "${REPO_ROOT}/kernel/h616_onikiri_defconfig" \
+        "${KERNEL_SRC}/arch/arm64/configs/h616_onikiri_defconfig"
+
+    # Copy our DTS
+    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-onikiri.dts" \
+        "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
+
+    # Add board to allwinner DTS Makefile if not present
+    DTSMK="${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/Makefile"
+    grep -q "sun50i-h616-onikiri" "${DTSMK}" || \
+        echo "dtb-\$(CONFIG_ARCH_SUNXI) += sun50i-h616-onikiri.dtb" >> "${DTSMK}"
+
+    make -C "${KERNEL_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        h616_onikiri_defconfig
+
+    make -C "${KERNEL_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        -j"${JOBS}" \
+        Image dtbs modules
+
+    # Install modules to staging area
+    make -C "${KERNEL_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        INSTALL_MOD_PATH="${ROOTFS_STAGE}" \
+        modules_install
+
+    log "Kernel build complete"
+    log "  Image: ${KERNEL_SRC}/arch/arm64/boot/Image"
+    log "  DTB:   ${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb"
+}
+
+# ── RTL8821CS out-of-tree Wi-Fi driver ────────────────────────────────────────
+build_rtl8821cs() {
+    log "Building RTL8821CS out-of-tree driver"
+    RTL_SRC="${BUILD_DIR}/rtl8821cs"
+    RTL_REPO="https://github.com/radxa/rtl8821cs.git"
+
+    if [[ ! -d "${RTL_SRC}" ]]; then
+        git clone --depth=1 "${RTL_REPO}" "${RTL_SRC}"
+    fi
+
+    make -C "${RTL_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        KSRC="${KERNEL_SRC}" \
+        -j"${JOBS}"
+
+    # Install to staging rootfs
+    KVER=$("${CROSS_COMPILE}gcc" --version | head -1)
+    KVER_DIR=$(ls "${ROOTFS_STAGE}/lib/modules/" | head -1)
+    install -Dm644 "${RTL_SRC}/88x2cs.ko" \
+        "${ROOTFS_STAGE}/lib/modules/${KVER_DIR}/kernel/drivers/net/wireless/88x2cs.ko"
+}
+
+# ── Root filesystem assembly ───────────────────────────────────────────────────
+assemble_rootfs() {
+    log "Assembling root filesystem"
+    mkdir -p "${ROOTFS_STAGE}"
+
+    # ── BusyBox install (pre-built static binary or cross-compiled) ───────────
+    if command -v busybox >/dev/null 2>&1; then
+        BUSYBOX_BIN=$(command -v busybox)
+    else
+        die "busybox not found — install busybox-static or cross-compile it"
+    fi
+
+    # Essential directory tree
+    for d in bin sbin usr/bin usr/sbin lib etc proc sys dev run tmp data \
+              usr/local/onikiri/supervisor \
+              usr/local/onikiri/modules \
+              usr/local/onikiri/ui \
+              usr/local/onikiri/bin \
+              var/lib/urandom mnt/overlay; do
+        mkdir -p "${ROOTFS_STAGE}/${d}"
+    done
+
+    # BusyBox symlinks
+    install -m755 "${BUSYBOX_BIN}" "${ROOTFS_STAGE}/bin/busybox"
+    "${BUSYBOX_BIN}" --list | while read -r applet; do
+        ln -sf /bin/busybox "${ROOTFS_STAGE}/bin/${applet}" 2>/dev/null || true
+    done
+    ln -sf /bin/busybox "${ROOTFS_STAGE}/sbin/init"
+
+    # Python 3 (host python is not suitable; this step requires a sysroot)
+    # In a real build, use buildroot or crosstool-ng to provide python3.
+    log "  [NOTE] Python3 ARM64 binary must be installed from your sysroot."
+    log "         See build/packages.list for required packages."
+
+    # Copy init scripts
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcS"     "${ROOTFS_STAGE}/etc/init.d/rcS"
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcK"     "${ROOTFS_STAGE}/etc/init.d/rcK"
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S10network" "${ROOTFS_STAGE}/etc/init.d/S10network"
+    install -m644 "${REPO_ROOT}/rootfs/etc/inittab"        "${ROOTFS_STAGE}/etc/inittab"
+    install -m644 "${REPO_ROOT}/rootfs/etc/fstab"          "${ROOTFS_STAGE}/etc/fstab"
+    install -m644 "${REPO_ROOT}/rootfs/etc/hostname"       "${ROOTFS_STAGE}/etc/hostname"
+    install -m644 "${REPO_ROOT}/rootfs/etc/hosts"          "${ROOTFS_STAGE}/etc/hosts"
+
+    # Copy supervisor + modules + UI
+    cp -r "${REPO_ROOT}/supervisor/." "${ROOTFS_STAGE}/usr/local/onikiri/supervisor/"
+    cp -r "${REPO_ROOT}/modules/."    "${ROOTFS_STAGE}/usr/local/onikiri/modules/"
+    cp -r "${REPO_ROOT}/ui/."         "${ROOTFS_STAGE}/usr/local/onikiri/ui/"
+
+    # Start script
+    install -m755 "${REPO_ROOT}/rootfs/usr/local/onikiri/bin/start-supervisor.sh" \
+        "${ROOTFS_STAGE}/usr/local/onikiri/bin/start-supervisor.sh"
+
+    # System config
+    install -m644 "${REPO_ROOT}/config/onikiri.conf" \
+        "${ROOTFS_STAGE}/etc/onikiri.conf"
+
+    log "Root filesystem assembled at ${ROOTFS_STAGE}"
+}
+
+# ── SquashFS ──────────────────────────────────────────────────────────────────
+build_squashfs() {
+    log "Building SquashFS image"
+    mksquashfs "${ROOTFS_STAGE}" "${SQUASHFS_IMG}" \
+        -comp zstd \
+        -Xcompression-level 19 \
+        -noappend \
+        -e proc sys dev run tmp \
+        2>&1 | tail -5
+    log "SquashFS: $(du -h "${SQUASHFS_IMG}" | cut -f1)"
+}
+
+# ── microSD image ─────────────────────────────────────────────────────────────
+build_image() {
+    log "Building microSD image: ${FINAL_IMG}"
+    "${REPO_ROOT}/build/mkimage.sh" \
+        --kernel "${KERNEL_SRC}/arch/arm64/boot/Image" \
+        --dtb    "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb" \
+        --rootfs "${SQUASHFS_IMG}" \
+        --output "${FINAL_IMG}"
+    log "Image ready: ${FINAL_IMG}"
+    log "  Flash with: balenaEtcher or  dd if=${FINAL_IMG} of=/dev/sdX bs=4M status=progress"
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+main() {
+    check_deps
+
+    if [[ "${OPT_CLEAN}" -eq 1 ]]; then
+        do_clean
+        exit 0
+    fi
+
+    if [[ "${OPT_IMAGE_ONLY}" -eq 0 ]]; then
+        build_kernel
+        build_rtl8821cs
+        assemble_rootfs
+        build_squashfs
+    fi
+
+    if [[ "${OPT_KERNEL_ONLY}" -eq 0 ]]; then
+        build_image
+    fi
+
+    log "Build complete."
+}
+
+main "$@"
