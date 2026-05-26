@@ -183,8 +183,6 @@
 // ── I2C1 — Touchscreen (Goodix GT911) ─────────────────────────────────────────
 
 &i2c1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&i2c1_pins>;
 	status = "okay";
 	clock-frequency = <400000>;
 
