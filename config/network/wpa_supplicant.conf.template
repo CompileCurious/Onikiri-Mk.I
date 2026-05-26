@@ -1,0 +1,26 @@
+# wpa_supplicant.conf.template — Wi-Fi credential template
+# Copy to /run/onikiri/wpa_supplicant.conf and fill in credentials before use.
+# This file is populated by the engagement loader module.
+
+ctrl_interface=/run/wpa_supplicant
+ctrl_interface_group=0
+update_config=0
+
+# ── Infrastructure network (WPA2/WPA3) ────────────────────────────────────────
+network={
+    ssid="REPLACE_WITH_SSID"
+    psk="REPLACE_WITH_PSK"
+    key_mgmt=WPA-PSK
+    proto=RSN
+    pairwise=CCMP
+    group=CCMP
+    priority=10
+}
+
+# ── Open network (for rogue AP capture, etc.) ─────────────────────────────────
+# Uncomment if needed
+#network={
+#    ssid="REPLACE_WITH_OPEN_SSID"
+#    key_mgmt=NONE
+#    priority=1
+#}
