@@ -1,12 +1,13 @@
 # /etc/inittab — BusyBox init configuration for Onikiri Mk.I
 #
 # Boot flow:
-#   sysinit  → mount filesystems, configure base system
-#   respawn  → supervisor (never exits; respawned if it does)
-#   respawn  → network init in background
+#   sysinit  → mount filesystems, launch hardware banner in background
+#   respawn  → supervisor + UI (never exits; respawned if it does)
+#   once     → network init in background
 #
 # No getty/login — direct supervisor launch only.
 
+# System initialization (includes backgrounded boot banner)
 ::sysinit:/etc/init.d/rcS
 
 # Supervisor — respawned on exit (field-hardened)

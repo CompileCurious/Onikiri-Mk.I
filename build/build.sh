@@ -211,6 +211,10 @@ assemble_rootfs() {
     install -m644 "${REPO_ROOT}/rootfs/etc/hostname"       "${ROOTFS_STAGE}/etc/hostname"
     install -m644 "${REPO_ROOT}/rootfs/etc/hosts"          "${ROOTFS_STAGE}/etc/hosts"
 
+    # Boot hardware check banner
+    install -m755 "${REPO_ROOT}/system/init/boot-check.sh" \
+        "${ROOTFS_STAGE}/usr/local/onikiri/boot-check.sh"
+
     # Copy supervisor + modules + UI
     cp -r "${REPO_ROOT}/supervisor/." "${ROOTFS_STAGE}/usr/local/onikiri/supervisor/"
     cp -r "${REPO_ROOT}/modules/."    "${ROOTFS_STAGE}/usr/local/onikiri/modules/"

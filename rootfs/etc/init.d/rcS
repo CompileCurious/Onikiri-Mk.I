@@ -60,5 +60,12 @@ chmod 700 /run/onikiri
 # (All core drivers are built-in; only OOT Wi-Fi driver needs explicit load)
 modprobe 88x2cs 2>/dev/null || true
 
+# ── Boot hardware check banner (backgrounded, parallel with supervisor) ─────
+# Displays ONIKIRI MK.I banner and hardware status on console/fb0
+# Runs in background so it doesn't block supervisor startup
+if [ -x /usr/local/onikiri/boot-check.sh ]; then
+    /usr/local/onikiri/boot-check.sh > /dev/console 2>&1 &
+fi
+
 # ── Done ─────────────────────────────────────────────────────────────────────
 # Supervisor and network init run as separate inittab entries.
