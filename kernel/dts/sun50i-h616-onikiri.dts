@@ -1,0 +1,225 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+// Device Tree Source — BigTreeTech Pad 7 (CB1 module, Allwinner H616)
+// Onikiri Mk.I pentesting platform
+
+/dts-v1/;
+
+#include "sun50i-h616.dtsi"
+
+/ {
+	model = "Onikiri Mk.I (BigTreeTech Pad 7 CB1)";
+	compatible = "bigtreetech,pad7-cb1", "allwinner,sun50i-h616";
+
+	aliases {
+		serial0 = &uart0;
+		mmc0    = &mmc0;
+		mmc1    = &mmc1;
+		ethernet0 = &emac0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		// Kernel command line — fast boot, no splash
+		bootargs = "console=ttyS0,115200n8 root=/dev/mmcblk0p2 ro rootfstype=squashfs \
+			rootwait quiet loglevel=3 init=/sbin/init \
+			fbcon=map:0 drm.debug=0 \
+			zswap.enabled=1 zswap.compressor=lz4 \
+			usbcore.autosuspend=-1";
+	};
+
+	// 1 GiB DDR3L on CB1
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+	};
+
+	// ── Power regulators ───────────────────────────────────────────────────
+
+	vcc_5v: regulator-vcc-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "VCC5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+	};
+
+	vcc_3v3: regulator-vcc-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "VCC3V3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		vin-supply = <&vcc_5v>;
+	};
+
+	vcc_1v8: regulator-vcc-1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "VCC1V8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+		vin-supply = <&vcc_3v3>;
+	};
+
+	// ── Wi-Fi power / reset ────────────────────────────────────────────────
+
+	wifi_pwrseq: pwrseq-wifi {
+		compatible = "mmc-pwrseq-simple";
+		reset-gpios = <&pio 6 18 GPIO_ACTIVE_LOW>;  // PG18 — CB1 WiFi reset
+		post-power-on-delay-ms = <50>;
+	};
+};
+
+// ── UART0 console ──────────────────────────────────────────────────────────────
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_ph_pins>;
+	status = "okay";
+};
+
+// ── I2C1 — Touchscreen (Goodix GT911) ─────────────────────────────────────────
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+	status = "okay";
+	clock-frequency = <400000>;
+
+	touchscreen: touchscreen@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		interrupt-parent = <&pio>;
+		interrupts = <7 4 IRQ_TYPE_EDGE_FALLING>;  // PH4
+		reset-gpios   = <&pio 7 3 GPIO_ACTIVE_HIGH>;  // PH3
+		irq-gpios     = <&pio 7 4 GPIO_ACTIVE_HIGH>;  // PH4
+		touchscreen-size-x = <1024>;
+		touchscreen-size-y = <600>;
+	};
+};
+
+// ── MMC0 — microSD card (rootfs) ───────────────────────────────────────────────
+
+&mmc0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mmc0_pins>;
+	vmmc-supply  = <&vcc_3v3>;
+	vqmmc-supply = <&vcc_3v3>;
+	cd-gpios     = <&pio 5 6 GPIO_ACTIVE_LOW>;
+	bus-width    = <4>;
+	max-frequency = <50000000>;
+	status = "okay";
+};
+
+// ── MMC1 — SDIO Wi-Fi (RTL8821CS) ─────────────────────────────────────────────
+
+&mmc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mmc1_pins>;
+	vmmc-supply  = <&vcc_3v3>;
+	vqmmc-supply = <&vcc_1v8>;
+	mmc-pwrseq   = <&wifi_pwrseq>;
+	bus-width    = <4>;
+	max-frequency = <50000000>;
+	non-removable;
+	status = "okay";
+
+	rtl8821cs: wifi@1 {
+		reg = <1>;
+		interrupt-parent = <&pio>;
+		interrupts = <6 15 IRQ_TYPE_LEVEL_LOW>;  // PG15 OOB IRQ
+	};
+};
+
+// ── HDMI output ────────────────────────────────────────────────────────────────
+
+&hdmi {
+	status = "okay";
+};
+
+&hdmi_out {
+	hdmi_out_con: endpoint {
+		remote-endpoint = <&hdmi_connector_in>;
+	};
+};
+
+// ── MIPI DSI — Pad 7 integrated display ────────────────────────────────────────
+
+&dsi {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	panel@0 {
+		compatible = "boe,bt070tg4101fi";
+		reg = <0>;
+		reset-gpios = <&pio 7 8 GPIO_ACTIVE_LOW>;  // PH8
+		backlight   = <&backlight>;
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi_out_port>;
+			};
+		};
+	};
+};
+
+&dsi_out_port {
+	remote-endpoint = <&panel_in>;
+};
+
+// ── Backlight (PWM-controlled) ─────────────────────────────────────────────────
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm0_pin>;
+	status = "okay";
+};
+
+/ {
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm 0 50000 0>;
+		brightness-levels = <0 16 32 64 96 128 160 192 224 255>;
+		default-brightness-level = <8>;
+	};
+};
+
+// ── USB OTG (DWC2) ─────────────────────────────────────────────────────────────
+
+&usb_otg {
+	dr_mode = "otg";
+	status = "okay";
+};
+
+&usbphy {
+	status = "okay";
+};
+
+// ── USB Host ────────────────────────────────────────────────────────────────────
+
+&ehci1 {
+	status = "okay";
+};
+
+&ohci1 {
+	status = "okay";
+};
+
+// ── Ethernet (on-SoC EMAC via USB-attached PHY on some CB1 revisions) ──────────
+
+&emac0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ext_rgmii_pins>;
+	phy-mode = "rgmii-id";
+	phy-handle = <&ext_rgmii_phy>;
+	allwinner,rx-delay-ps = <200>;
+	allwinner,tx-delay-ps = <700>;
+	status = "okay";
+};
+
+&mdio0 {
+	ext_rgmii_phy: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+	};
+};
