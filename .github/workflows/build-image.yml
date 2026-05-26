@@ -47,6 +47,8 @@ jobs:
             libelf-dev \
             libncurses-dev \
             device-tree-compiler \
+            dwarves \
+            zstd \
             squashfs-tools \
             dosfstools \
             parted \
