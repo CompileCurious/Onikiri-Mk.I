@@ -1,0 +1,143 @@
+name: Build Onikiri Image
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    name: Cross-compile and package microSD image
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    permissions:
+      contents: write   # needed to create releases and upload assets
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── Build date ───────────────────────────────────────────────────────
+      - name: Set build date
+        id: date
+        run: |
+          BUILD_DATE="$(date -u '+%Y-%m-%d')"
+          BUILD_STAMP="$(date -u '+%Y%m%d-%H%M')"
+          echo "BUILD_DATE=${BUILD_DATE}"    >> "$GITHUB_OUTPUT"
+          echo "BUILD_STAMP=${BUILD_STAMP}"  >> "$GITHUB_OUTPUT"
+          echo "TAG=build-${BUILD_STAMP}"    >> "$GITHUB_OUTPUT"
+          echo "IMG_NAME=onikiri-mkI-${BUILD_STAMP}.img" >> "$GITHUB_OUTPUT"
+
+      # ── Apt dependencies ─────────────────────────────────────────────────
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            make \
+            bc \
+            bison \
+            flex \
+            libssl-dev \
+            libelf-dev \
+            libncurses-dev \
+            device-tree-compiler \
+            squashfs-tools \
+            dosfstools \
+            parted \
+            u-boot-tools \
+            python3 \
+            cpio \
+            rsync \
+            wget \
+            git \
+            kmod
+
+      # ── Kernel source cache ──────────────────────────────────────────────
+      - name: Cache Linux kernel source
+        id: cache-kernel
+        uses: actions/cache@v4
+        with:
+          path: out/linux
+          key: linux-6.6.30-src
+          restore-keys: |
+            linux-6.6.30-src
+
+      # ── Build ────────────────────────────────────────────────────────────
+      - name: Build Onikiri image
+        env:
+          CROSS_COMPILE: aarch64-linux-gnu-
+          ARCH: arm64
+          JOBS: ${{ fromJSON(runner.cpu) }}  # Use all runner cores
+        run: |
+          chmod +x build/build.sh build/mkimage.sh
+          bash build/build.sh
+
+      # ── Rename artifact with build stamp ─────────────────────────────────
+      - name: Rename image with build stamp
+        run: |
+          # build.sh names the file onikiri-mkI-YYYYMMDD.img (date only);
+          # rename to include the full YYYYMMDD-HHMM stamp used in the tag.
+          SRC="$(ls out/onikiri-mkI-*.img | head -1)"
+          DEST="out/${{ steps.date.outputs.IMG_NAME }}"
+          if [[ "$SRC" != "$DEST" ]]; then
+            mv "$SRC" "$DEST"
+          fi
+          echo "IMAGE_PATH=${DEST}" >> "$GITHUB_ENV"
+
+      # ── Upload build artifact (always kept for 7 days) ───────────────────
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.date.outputs.IMG_NAME }}
+          path: ${{ env.IMAGE_PATH }}
+          retention-days: 7
+          if-no-files-found: error
+
+      # ── Create GitHub prerelease ─────────────────────────────────────────
+      - name: Create prerelease and upload image
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.date.outputs.TAG }}
+          name: "Onikiri Mk.I — Build ${{ steps.date.outputs.BUILD_DATE }}"
+          prerelease: true
+          draft: false
+          generate_release_notes: false
+          body: |
+            ## Onikiri Mk.I — Automated Build
+
+            **Build date:** ${{ steps.date.outputs.BUILD_DATE }}
+            **Commit:** [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            **Branch:** `${{ github.ref_name }}`
+
+            ---
+
+            ### Flashing
+
+            Flash `${{ steps.date.outputs.IMG_NAME }}` directly to a microSD card (≥ 4 GB):
+
+            ```bash
+            # balenaEtcher (GUI) — open the .img and select your card
+
+            # or dd (CLI, replace /dev/sdX with your card)
+            sudo dd if=${{ steps.date.outputs.IMG_NAME }} of=/dev/sdX bs=4M status=progress conv=fsync
+            sudo sync
+            ```
+
+            ### Image layout
+
+            | Partition | Type | Size | Content |
+            |---|---|---|---|
+            | p1 | FAT32 | 64 MiB | U-Boot SPL, Image, DTB, boot.scr |
+            | p2 | SquashFS | 512 MiB | Read-only root filesystem |
+            | p3 | ext4 | remainder | OverlayFS upper + engagement data |
+
+            > **This is a pre-release build.** Intended for authorised security testing on hardware you own or have explicit written permission to test.
+          files: ${{ env.IMAGE_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
