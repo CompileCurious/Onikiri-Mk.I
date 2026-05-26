@@ -1,0 +1,276 @@
+#:kivy 2.2
+#:import theme ui.theme
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Root layout — full-screen black canvas, grid of panels
+# ─────────────────────────────────────────────────────────────────────────────
+
+<OnikiriRoot>:
+    canvas.before:
+        Color:
+            rgba: theme.BG_COLOR
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    orientation: 'vertical'
+    spacing: 0
+    padding: 0
+
+    # ── Status bar ────────────────────────────────────────────────────────────
+    OnikiriStatusBar:
+        id: status_bar
+        size_hint_y: None
+        height: dp(28)
+
+    # ── Panel grid ────────────────────────────────────────────────────────────
+    GridLayout:
+        id: panel_grid
+        cols: 3
+        rows: 2
+        spacing: dp(theme.GRID_SPACING)
+        padding: dp(theme.GRID_PADDING)
+        size_hint: 1, 1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Module Panel
+# ─────────────────────────────────────────────────────────────────────────────
+
+<ModulePanel>:
+    # Sharp rectangular border — no rounded corners
+    canvas.before:
+        # Panel fill
+        Color:
+            rgba: root.panel_fill
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        # Border (2 dp, drawn as 4 thin rectangles for precise control)
+        Color:
+            rgba: root.border_color
+        Line:
+            rectangle: [self.x + 1, self.y + 1, self.width - 2, self.height - 2]
+            width: dp(theme.BORDER_WIDTH)
+        # Tap flash overlay
+        Color:
+            rgba: root.flash_color
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    # Icon placeholder (geometric shape, drawn in canvas)
+    canvas:
+        Color:
+            rgba: root.icon_color
+        # Vertical bar icon — simple, geometric
+        Rectangle:
+            pos: self.x + self.width * 0.5 - dp(1), self.y + self.height * 0.38
+            size: dp(2), self.height * 0.18
+        Rectangle:
+            pos: self.x + self.width * 0.5 - dp(6), self.y + self.height * 0.38
+            size: dp(2), self.height * 0.12
+        Rectangle:
+            pos: self.x + self.width * 0.5 + dp(4), self.y + self.height * 0.38
+            size: dp(2), self.height * 0.14
+
+    orientation: 'vertical'
+    padding: dp(theme.PANEL_PADDING)
+    spacing: dp(4)
+
+    # Label
+    Label:
+        id: label
+        text: root.label_text
+        font_name: theme.FONT_MONO
+        font_size: sp(theme.FONT_SIZE_PANEL)
+        bold: True
+        color: root.label_color
+        size_hint_y: 0.55
+        halign: 'center'
+        valign: 'middle'
+        text_size: self.size
+        shorten: False
+
+    # Status text
+    Label:
+        id: status_label
+        text: root.status_text
+        font_name: theme.FONT_MONO
+        font_size: sp(theme.FONT_SIZE_STATUS)
+        color: theme.TEXT_DIM
+        size_hint_y: 0.25
+        halign: 'center'
+        valign: 'top'
+        text_size: self.size
+
+    # Status strip at bottom
+    Widget:
+        id: status_strip
+        size_hint_y: None
+        height: dp(theme.STATUS_HEIGHT)
+        canvas:
+            Color:
+                rgba: root.strip_color
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Status Bar (top edge of screen)
+# ─────────────────────────────────────────────────────────────────────────────
+
+<OnikiriStatusBar>:
+    canvas.before:
+        Color:
+            rgba: (0.05, 0.05, 0.05, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: theme.BORDER_COLOR
+        Line:
+            points: [self.x, self.y, self.x + self.width, self.y]
+            width: dp(1)
+
+    orientation: 'horizontal'
+    padding: [dp(10), 0, dp(10), 0]
+    spacing: dp(20)
+
+    Label:
+        id: label_device
+        text: "ONIKIRI MK.I"
+        font_name: theme.FONT_MONO
+        font_size: sp(11)
+        bold: True
+        color: theme.BORDER_ACTIVE
+        size_hint_x: None
+        width: dp(120)
+        halign: 'left'
+        text_size: self.size
+        valign: 'middle'
+
+    Label:
+        id: label_status
+        text: "READY"
+        font_name: theme.FONT_MONO
+        font_size: sp(11)
+        color: theme.TEXT_DIM
+        halign: 'left'
+        text_size: self.size
+        valign: 'middle'
+
+    Label:
+        id: label_time
+        text: "00:00"
+        font_name: theme.FONT_MONO
+        font_size: sp(11)
+        color: theme.TEXT_DIM
+        size_hint_x: None
+        width: dp(60)
+        halign: 'right'
+        text_size: self.size
+        valign: 'middle'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Advanced Options Overlay (long-press)
+# ─────────────────────────────────────────────────────────────────────────────
+
+<AdvancedOverlay>:
+    canvas.before:
+        Color:
+            rgba: (0, 0, 0, 0.88)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: theme.BORDER_COLOR
+        Line:
+            rectangle: [self.x + 2, self.y + 2, self.width - 4, self.height - 4]
+            width: dp(2)
+
+    orientation: 'vertical'
+    padding: dp(16)
+    spacing: dp(8)
+
+    Label:
+        id: overlay_title
+        text: root.module_label + "  /"
+        font_name: theme.FONT_MONO
+        font_size: sp(18)
+        bold: True
+        color: theme.TEXT_RED
+        size_hint_y: None
+        height: dp(36)
+        halign: 'left'
+        text_size: self.size
+
+    ScrollView:
+        do_scroll_x: False
+        GridLayout:
+            id: command_grid
+            cols: 1
+            size_hint_y: None
+            height: self.minimum_height
+            spacing: dp(2)
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(44)
+        spacing: dp(8)
+        Button:
+            text: "CLOSE"
+            font_name: theme.FONT_MONO
+            font_size: sp(13)
+            bold: True
+            background_color: (0, 0, 0, 0)
+            color: theme.TEXT_DIM
+            on_release: root.dismiss()
+            canvas.before:
+                Color:
+                    rgba: theme.BORDER_COLOR
+                Line:
+                    rectangle: [self.x, self.y, self.width, self.height]
+                    width: dp(1)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Command row inside overlay
+# ─────────────────────────────────────────────────────────────────────────────
+
+<CommandRow>:
+    size_hint_y: None
+    height: dp(40)
+    canvas.before:
+        Color:
+            rgba: (0.10, 0.10, 0.10, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: (0.25, 0.01, 0.01, 1)
+        Line:
+            points: [self.x, self.y, self.x + self.width, self.y]
+            width: dp(1)
+
+    orientation: 'horizontal'
+    padding: [dp(8), 0]
+    spacing: dp(8)
+
+    Label:
+        text: root.cmd_name
+        font_name: theme.FONT_MONO
+        font_size: sp(theme.FONT_SIZE_OVERLAY)
+        color: theme.TEXT_COLOR
+        size_hint_x: 0.35
+        halign: 'left'
+        text_size: self.size
+        valign: 'middle'
+
+    Label:
+        text: root.cmd_desc
+        font_name: theme.FONT_MONO
+        font_size: sp(10)
+        color: theme.TEXT_DIM
+        size_hint_x: 0.65
+        halign: 'left'
+        text_size: self.size
+        valign: 'middle'
