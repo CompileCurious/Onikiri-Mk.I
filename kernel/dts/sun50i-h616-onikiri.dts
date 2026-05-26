@@ -221,7 +221,5 @@
 // ── PWM (backlight) ────────────────────────────────────────────────────────────
 
 &pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm0_pin>;
 	status = "okay";
 };

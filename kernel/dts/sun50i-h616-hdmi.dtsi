@@ -164,5 +164,15 @@
 			reset-names = "phy";
 			#phy-cells = <0>;
 		};
+
+		pwm: pwm@300a000 {
+			compatible = "allwinner,sun50i-h616-pwm";
+			reg = <0x0300a000 0x400>;
+			clocks = <&ccu CLK_BUS_PWM>, <&ccu CLK_PWM>;
+			clock-names = "bus", "mod";
+			resets = <&ccu RST_BUS_PWM>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
