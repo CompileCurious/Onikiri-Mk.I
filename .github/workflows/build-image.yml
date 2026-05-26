@@ -73,7 +73,6 @@ jobs:
         env:
           CROSS_COMPILE: aarch64-linux-gnu-
           ARCH: arm64
-          JOBS: ${{ fromJSON(runner.cpu) }}  # Use all runner cores
         run: |
           chmod +x build/build.sh build/mkimage.sh
           bash build/build.sh
