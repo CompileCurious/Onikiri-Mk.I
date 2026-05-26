@@ -72,26 +72,10 @@
 		post-power-on-delay-ms = <50>;
 	};
 
-	// ── HDMI connector ────────────────────────────────────────────────────
-
-	hdmi_con: connector {
-		compatible = "hdmi-connector";
-		type = "a";
-		port {
-			hdmi_con_in: endpoint {
-				remote-endpoint = <&hdmi_out_con>;
-			};
-		};
-	};
-
-	// ── Backlight (PWM-controlled) ─────────────────────────────────────────
-
-	backlight: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm 0 50000 0>;
-		brightness-levels = <0 16 32 64 96 128 160 192 224 255>;
-		default-brightness-level = <8>;
-	};
+	// ── Display and backlight ──────────────────────────────────────────────
+	// NOTE: H616 mainline (6.6.30) has no HDMI or PWM support yet.
+	// Display will use simplefb from U-Boot framebuffer if available.
+	// TODO: Add HDMI and PWM nodes when upstreamed to mainline.
 };
 
 // ── UART0 console ──────────────────────────────────────────────────────────────
@@ -155,29 +139,9 @@
 	};
 };
 
-// ── HDMI output ────────────────────────────────────────────────────────────────
-
-&hdmi {
-	status = "okay";
-};
-
-&hdmi_out {
-	hdmi_out_con: endpoint {
-		remote-endpoint = <&hdmi_con_in>;
-	};
-};
-
-// ── Backlight PWM ──────────────────────────────────────────────────────────────
-
-&pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm0_pin>;
-	status = "okay";
-};
-
 // ── USB OTG (DWC2) ─────────────────────────────────────────────────────────────
 
-&usb_otg {
+&usbotg {
 	dr_mode = "otg";
 	status = "okay";
 };
