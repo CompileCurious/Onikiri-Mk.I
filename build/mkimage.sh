@@ -19,6 +19,12 @@ DTB=""
 ROOTFS=""
 OUTPUT=""
 
+# ── Require root (losetup, mount, mkfs need elevated privileges) ──────────────
+# Must come BEFORE argument parsing so $@ is still intact when re-execing.
+if [[ $EUID -ne 0 ]]; then
+    exec sudo -E "$0" "$@"
+fi
+
 # ── Argument parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -34,11 +40,6 @@ done
 [[ -n "${DTB}"    ]] || { echo "Missing --dtb"    >&2; exit 1; }
 [[ -n "${ROOTFS}" ]] || { echo "Missing --rootfs" >&2; exit 1; }
 [[ -n "${OUTPUT}" ]] || { echo "Missing --output" >&2; exit 1; }
-
-# ── Require root (losetup, mount, mkfs need elevated privileges) ──────────────
-if [[ $EUID -ne 0 ]]; then
-    exec sudo -E "$0" "$@"
-fi
 
 # ── Sizes ─────────────────────────────────────────────────────────────────────
 IMG_SIZE_MB=3072       # 3 GiB total image (for 4 GiB card minimum)
