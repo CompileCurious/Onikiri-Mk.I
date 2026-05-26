@@ -3,10 +3,12 @@
 // Adds nodes not present in mainline 6.6.30 sun50i-h616.dtsi
 // To be included by board DTS files that need HDMI output
 
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/sun50i-h616-ccu.h>
+#include <dt-bindings/reset/sun50i-h616-ccu.h>
 #include <dt-bindings/clock/sun8i-de2.h>
 #include <dt-bindings/clock/sun8i-tcon-top.h>
 #include <dt-bindings/reset/sun8i-de2.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
 
 &{/} {
 	de: display-engine {
