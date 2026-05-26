@@ -105,6 +105,9 @@ jobs:
       # ── Compress image for release (GitHub release assets capped at 2 GiB) ─
       - name: Compress image for release
         run: |
+          # The image file is owned by root (created via sudo mkimage.sh).
+          # Re-own it before compressing so xz can write the output file.
+          sudo chown "$USER": "${IMAGE_PATH}"
           xz -T0 -9 -k "${IMAGE_PATH}"
           echo "COMPRESSED_IMAGE_PATH=${IMAGE_PATH}.xz" >> "$GITHUB_ENV"
 
