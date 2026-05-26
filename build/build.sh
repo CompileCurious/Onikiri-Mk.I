@@ -109,7 +109,19 @@ build_kernel() {
         ARCH="${ARCH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
         -j"${JOBS}" \
-        Image dtbs modules
+        --output-sync=line \
+        Image dtbs 2>&1 | tee "${BUILD_DIR}/kernel-build.log"
+    # Fail loudly if the pipe succeeded but make itself failed
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        log "Kernel build failed — last 60 lines of log:"
+        tail -60 "${BUILD_DIR}/kernel-build.log" >&2
+        die "Kernel build failed"
+    fi
+    # Modules target is a no-op with CONFIG_MODULES=n; kept for completeness
+    make -C "${KERNEL_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        modules 2>/dev/null || true
 
     # Install modules to staging area
     make -C "${KERNEL_SRC}" \
