@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+for script in /etc/init.d/S*; do
+    [ -x "$script" ] || continue
+    case "$script" in
+        *~) continue ;;
+    esac
+    "$script"
+done

@@ -1,0 +1,6 @@
+label: dos
+unit: MiB
+
+1 : start=4, size=256, type=c, bootable
+2 : size=1024, type=83
+3 : type=83

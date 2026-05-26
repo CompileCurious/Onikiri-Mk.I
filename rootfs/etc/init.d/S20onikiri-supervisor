@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+mkdir -p /run/onikiri
+/usr/bin/onikiri-supervisor-launch >/var/log/onikiri-supervisor.log 2>&1 &

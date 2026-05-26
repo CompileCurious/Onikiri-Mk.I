@@ -1,0 +1,17 @@
+{
+  "name": "minimal",
+  "description": "Default field profile with passive discovery enabled and live operations disabled.",
+  "live_operations": false,
+  "modules": {
+    "wifi_recon": {
+      "default_interface": "wlan0"
+    },
+    "network_scanner": {
+      "default_tool": "nmap",
+      "default_ports": "top-100"
+    },
+    "system_info": {
+      "capture_network": true
+    }
+  }
+}

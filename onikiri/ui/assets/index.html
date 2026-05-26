@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Onikiri Mk.I</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="dashboard">
+      <header class="topbar">
+        <div>
+          <h1>ONIKIRI MK.I</h1>
+          <p>Minimal field interface</p>
+        </div>
+        <button id="wipe-button" class="danger">WIPE ENGAGEMENT DATA</button>
+      </header>
+      <section id="panel-grid" class="panel-grid"></section>
+    </main>
+
+    <aside id="overlay" class="overlay hidden">
+      <div class="overlay-card">
+        <h2 id="overlay-title">MODULE</h2>
+        <pre id="overlay-content"></pre>
+        <button id="overlay-close">CLOSE</button>
+      </div>
+    </aside>
+
+    <template id="panel-template">
+      <button class="panel" type="button">
+        <span class="panel-icon">▣</span>
+        <span class="panel-label"></span>
+        <span class="status-strip">INACTIVE</span>
+      </button>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

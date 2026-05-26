@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+(
+    ip link set lo up
+    ip link set wlan0 up 2>/dev/null || true
+    udhcpc -b -q -i wlan0 -t 3 -T 2 >/run/udhcpc.log 2>&1 || true
+) &

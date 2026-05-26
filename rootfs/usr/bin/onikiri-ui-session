@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+SOCKET=/run/onikiri/supervisor.sock
+for _ in $(seq 1 40); do
+    [ -S "$SOCKET" ] && break
+    sleep 0.1
+done
+cd /opt/onikiri
+exec /usr/bin/python3 -m onikiri.ui.bridge \
+  --config /etc/onikiri/onikiri-supervisor.json \
+  --socket "$SOCKET"

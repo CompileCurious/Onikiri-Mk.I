@@ -1,0 +1,30 @@
+{
+  "socket_path": "/run/onikiri/supervisor.sock",
+  "log_path": "/var/log/onikiri/supervisor.log",
+  "engagement_data_dir": "/data/engagements",
+  "overlay_paths": [
+    "/overlay/data",
+    "/data/engagements"
+  ],
+  "public_mode": true,
+  "allow_live_operations": false,
+  "ui": {
+    "listen": "127.0.0.1",
+    "port": 8171,
+    "kiosk_command": [
+      "/usr/bin/cog",
+      "--platform=drm",
+      "http://127.0.0.1:8171"
+    ]
+  },
+  "modules": [
+    "wifi_recon",
+    "mitm",
+    "network_scanner",
+    "bluetooth_recon",
+    "hid_gadget",
+    "payload_builder",
+    "engagement",
+    "system_info"
+  ]
+}
