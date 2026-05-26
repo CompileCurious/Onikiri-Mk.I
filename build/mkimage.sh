@@ -35,6 +35,11 @@ done
 [[ -n "${ROOTFS}" ]] || { echo "Missing --rootfs" >&2; exit 1; }
 [[ -n "${OUTPUT}" ]] || { echo "Missing --output" >&2; exit 1; }
 
+# ── Require root (losetup, mount, mkfs need elevated privileges) ──────────────
+if [[ $EUID -ne 0 ]]; then
+    exec sudo -E "$0" "$@"
+fi
+
 # ── Sizes ─────────────────────────────────────────────────────────────────────
 IMG_SIZE_MB=3072       # 3 GiB total image (for 4 GiB card minimum)
 BOOT_SIZE_MB=64

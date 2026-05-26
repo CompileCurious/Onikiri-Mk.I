@@ -183,7 +183,7 @@ assemble_rootfs() {
     fi
 
     # Essential directory tree
-    for d in bin sbin usr/bin usr/sbin lib etc proc sys dev run tmp data \
+    for d in bin sbin usr/bin usr/sbin lib etc etc/init.d proc sys dev run tmp data \
               usr/local/onikiri/supervisor \
               usr/local/onikiri/modules \
               usr/local/onikiri/ui \
@@ -268,7 +268,12 @@ main() {
 
     if [[ "${OPT_IMAGE_ONLY}" -eq 0 ]]; then
         build_kernel
-        build_rtl8821cs
+        # RTL8821CS is an out-of-tree module; skip if CONFIG_MODULES is not set
+        if grep -q "^CONFIG_MODULES=y" "${KERNEL_SRC}/.config" 2>/dev/null; then
+            build_rtl8821cs
+        else
+            log "Skipping RTL8821CS out-of-tree driver (CONFIG_MODULES is not set)"
+        fi
         assemble_rootfs
         build_squashfs
     fi

@@ -51,8 +51,10 @@ jobs:
             zstd \
             squashfs-tools \
             dosfstools \
+            e2fsprogs \
             parted \
             u-boot-tools \
+            busybox-static \
             python3 \
             cpio \
             rsync \
