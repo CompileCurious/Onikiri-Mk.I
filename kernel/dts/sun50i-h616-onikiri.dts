@@ -68,6 +68,27 @@
 		reset-gpios = <&pio 6 18 GPIO_ACTIVE_LOW>;  // PG18 — CB1 WiFi reset
 		post-power-on-delay-ms = <50>;
 	};
+
+	// ── HDMI connector ────────────────────────────────────────────────────
+
+	hdmi_con: connector {
+		compatible = "hdmi-connector";
+		type = "a";
+		port {
+			hdmi_con_in: endpoint {
+				remote-endpoint = <&hdmi_out_con>;
+			};
+		};
+	};
+
+	// ── Backlight (PWM-controlled) ─────────────────────────────────────────
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm 0 50000 0>;
+		brightness-levels = <0 16 32 64 96 128 160 192 224 255>;
+		default-brightness-level = <8>;
+	};
 };
 
 // ── UART0 console ──────────────────────────────────────────────────────────────
@@ -139,49 +160,16 @@
 
 &hdmi_out {
 	hdmi_out_con: endpoint {
-		remote-endpoint = <&hdmi_connector_in>;
+		remote-endpoint = <&hdmi_con_in>;
 	};
 };
 
-// ── MIPI DSI — Pad 7 integrated display ────────────────────────────────────────
-
-&dsi {
-	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	panel@0 {
-		compatible = "boe,bt070tg4101fi";
-		reg = <0>;
-		reset-gpios = <&pio 7 8 GPIO_ACTIVE_LOW>;  // PH8
-		backlight   = <&backlight>;
-		port {
-			panel_in: endpoint {
-				remote-endpoint = <&dsi_out_port>;
-			};
-		};
-	};
-};
-
-&dsi_out_port {
-	remote-endpoint = <&panel_in>;
-};
-
-// ── Backlight (PWM-controlled) ─────────────────────────────────────────────────
+// ── Backlight PWM ──────────────────────────────────────────────────────────────
 
 &pwm {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pwm0_pin>;
 	status = "okay";
-};
-
-/ {
-	backlight: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm 0 50000 0>;
-		brightness-levels = <0 16 32 64 96 128 160 192 224 255>;
-		default-brightness-level = <8>;
-	};
 };
 
 // ── USB OTG (DWC2) ─────────────────────────────────────────────────────────────
