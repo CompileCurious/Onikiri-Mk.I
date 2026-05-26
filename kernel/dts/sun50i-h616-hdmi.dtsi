@@ -6,6 +6,7 @@
 #include <dt-bindings/clock/sun8i-de2.h>
 #include <dt-bindings/clock/sun8i-tcon-top.h>
 #include <dt-bindings/reset/sun8i-de2.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
 
 &{/} {
 	de: display-engine {
