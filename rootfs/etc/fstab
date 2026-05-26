@@ -1,0 +1,25 @@
+# /etc/fstab — Onikiri Mk.I
+#
+# The root filesystem is a SquashFS image mounted read-only.
+# A separate ext4 partition holds the OverlayFS upper/work layers
+# and persistent engagement data.
+# All remaining writable areas use tmpfs.
+#
+# <device>          <mount>     <type>      <options>               <dump> <pass>
+
+# Root — SquashFS, read-only (mounted by kernel via cmdline root=)
+/dev/mmcblk0p2      /           squashfs    ro,noatime              0      0
+
+# Overlay / data partition (written only; upper layer for OverlayFS)
+/dev/mmcblk0p3      /mnt/overlay ext4       noatime,nodiratime      0      2
+
+# Virtual filesystems (mounted in rcS before fstab is processed)
+proc                /proc       proc        nosuid,noexec,nodev     0      0
+sysfs               /sys        sysfs       nosuid,noexec,nodev     0      0
+devtmpfs            /dev        devtmpfs    mode=0755,nosuid        0      0
+devpts              /dev/pts    devpts      mode=0620,gid=5         0      0
+tmpfs               /run        tmpfs       mode=0755,size=64m      0      0
+tmpfs               /tmp        tmpfs       mode=1777,size=32m      0      0
+
+# Engagement data — tmpfs backed, synced to overlay by supervisor
+tmpfs               /data       tmpfs       mode=0700,size=256m     0      0

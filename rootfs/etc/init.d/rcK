@@ -1,0 +1,17 @@
+#!/bin/sh
+# /etc/init.d/rcK — Shutdown script for Onikiri Mk.I
+
+# Stop supervisor cleanly
+kill $(cat /run/onikiri/supervisor.pid 2>/dev/null) 2>/dev/null || true
+sleep 0.5
+
+# Save entropy seed
+mkdir -p /var/lib/urandom
+dd if=/dev/urandom of=/var/lib/urandom/seed bs=512 count=1 2>/dev/null
+
+# Sync all filesystems
+sync
+
+# Unmount overlays
+umount /data 2>/dev/null || true
+umount /mnt/overlay 2>/dev/null || true

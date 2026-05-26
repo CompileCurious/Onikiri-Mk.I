@@ -1,4 +1,20 @@
+# /etc/inittab — BusyBox init configuration for Onikiri Mk.I
+#
+# Boot flow:
+#   sysinit  → mount filesystems, configure base system
+#   respawn  → supervisor (never exits; respawned if it does)
+#   respawn  → network init in background
+#
+# No getty/login — direct supervisor launch only.
+
 ::sysinit:/etc/init.d/rcS
-::respawn:/usr/bin/onikiri-ui-session
-::ctrlaltdel:/bin/umount -a -r
-::shutdown:/bin/umount -a -r
+
+# Supervisor — respawned on exit (field-hardened)
+::respawn:/usr/local/onikiri/bin/start-supervisor.sh
+
+# Network — started after supervisor IPC is ready
+::once:/etc/init.d/S10network
+
+# Signal handlers
+::ctrlaltdel:/sbin/reboot
+::shutdown:/etc/init.d/rcK

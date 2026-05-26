@@ -1,11 +1,64 @@
 #!/bin/sh
-set -eu
+# /etc/init.d/rcS — Onikiri Mk.I main init script
+# Executed by BusyBox init as sysinit.
+# Target: < 1 second total wall time for this script.
 
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-for script in /etc/init.d/S*; do
-    [ -x "$script" ] || continue
-    case "$script" in
-        *~) continue ;;
-    esac
-    "$script"
-done
+# ── Strict mode ───────────────────────────────────────────────────────────────
+set -e
+
+# ── Mount virtual filesystems (parallel where possible) ──────────────────────
+mount -t proc     proc     /proc          -o nosuid,noexec,nodev
+mount -t sysfs    sysfs    /sys           -o nosuid,noexec,nodev
+mount -t devtmpfs devtmpfs /dev           -o mode=0755,nosuid
+
+# devpts for PTY support (needed by some tools)
+mkdir -p /dev/pts
+mount -t devpts devpts /dev/pts -o mode=0620,gid=5,nosuid,noexec
+
+# tmpfs for runtime state
+mount -t tmpfs tmpfs /run  -o mode=0755,nosuid,nodev,size=64m
+mount -t tmpfs tmpfs /tmp  -o mode=1777,nosuid,nodev,size=32m
+
+# ── Hostname ──────────────────────────────────────────────────────────────────
+hostname -F /etc/hostname
+
+# ── OverlayFS — writable layer over read-only SquashFS ───────────────────────
+# Overlay upper/work dirs live on a small tmpfs partition (mmcblk0p3)
+# or fall back to tmpfs in RAM if the data partition is absent.
+OVERLAY_DEV=/dev/mmcblk0p3
+OVERLAY_MOUNT=/mnt/overlay
+
+mkdir -p "${OVERLAY_MOUNT}"
+
+if blkid "${OVERLAY_DEV}" >/dev/null 2>&1; then
+    mount -t ext4 "${OVERLAY_DEV}" "${OVERLAY_MOUNT}" -o noatime
+else
+    mount -t tmpfs tmpfs "${OVERLAY_MOUNT}" -o mode=0755,size=512m
+fi
+
+mkdir -p "${OVERLAY_MOUNT}/upper"
+mkdir -p "${OVERLAY_MOUNT}/work"
+mkdir -p "${OVERLAY_MOUNT}/data"
+
+# /data — engagement data storage (writable via overlay)
+mount -t tmpfs tmpfs /data -o mode=0700,nosuid,nodev,size=256m
+
+# ── Loopback interface ────────────────────────────────────────────────────────
+ip link set lo up
+
+# ── Randomness seed ───────────────────────────────────────────────────────────
+if [ -f /var/lib/urandom/seed ]; then
+    cat /var/lib/urandom/seed > /dev/urandom
+fi
+
+# ── Create runtime directories ────────────────────────────────────────────────
+mkdir -p /run/onikiri
+mkdir -p /run/lock
+chmod 700 /run/onikiri
+
+# ── Load required kernel modules ─────────────────────────────────────────────
+# (All core drivers are built-in; only OOT Wi-Fi driver needs explicit load)
+modprobe 88x2cs 2>/dev/null || true
+
+# ── Done ─────────────────────────────────────────────────────────────────────
+# Supervisor and network init run as separate inittab entries.
