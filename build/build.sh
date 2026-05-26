@@ -154,7 +154,7 @@ build_rtl8821cs() {
     RTL_REPO="https://github.com/radxa/rtl8821cs.git"
 
     if [[ ! -d "${RTL_SRC}" ]]; then
-        git clone --depth=1 "${RTL_REPO}" "${RTL_SRC}"
+        GIT_TERMINAL_PROMPT=0 git clone --depth=1 "${RTL_REPO}" "${RTL_SRC}"
     fi
 
     make -C "${RTL_SRC}" \
