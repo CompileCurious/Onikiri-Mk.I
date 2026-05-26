@@ -85,6 +85,16 @@ build_kernel() {
     if [[ ! -d "${KERNEL_SRC}" ]]; then
         git clone --depth=1 --branch="${KERNEL_TAG}" \
             "${KERNEL_REPO}" "${KERNEL_SRC}"
+        
+        # Apply H616 hardware support patches (HDMI, DE3, PWM)
+        log "Applying H616 hardware patches..."
+        for patch in "${REPO_ROOT}"/kernel/patches/*.patch; do
+            [[ -f "${patch}" ]] || continue
+            log "  → $(basename "${patch}")"
+            if ! patch -p1 -d "${KERNEL_SRC}" < "${patch}"; then
+                die "Failed to apply patch: $(basename "${patch}")"
+            fi
+        done
     fi
 
     # Copy our defconfig
