@@ -149,8 +149,44 @@
           </div>
 
           <div class="control-block">
-            <label class="field-label">DEVICE PROFILE</label>
-            <select id="hid-device-profile"></select>
+            <label class="field-label">ENUMERATE AS</label>
+            <div style="display:flex;gap:0.4rem;align-items:center;">
+              <select id="hid-device-profile" class="field-input" style="flex:1;min-width:0;"></select>
+              <button id="hid-device-del-btn" class="danger" title="Remove custom device" disabled style="flex-shrink:0;">✕</button>
+            </div>
+            <button id="hid-device-add-btn" class="control-secondary" style="margin-top:0.4rem;width:100%;">+ ADD DEVICE ID</button>
+          </div>
+
+          <!-- Inline device ID editor -->
+          <div id="hid-device-editor" class="rule-editor hidden">
+            <div class="editor-title">NEW DEVICE ID</div>
+            <div class="editor-row">
+              <span class="rule-kw">LABEL</span>
+              <input id="de-label" class="ed-input" type="text" placeholder="e.g. Dell KB216" />
+            </div>
+            <div class="editor-row">
+              <span class="rule-kw">VID</span>
+              <input id="de-vid" class="ed-input" type="text" placeholder="0x1234" style="width:5.5rem;" />
+              <span class="rule-kw">PID</span>
+              <input id="de-pid" class="ed-input" type="text" placeholder="0x5678" style="width:5.5rem;" />
+            </div>
+            <div class="editor-row">
+              <span class="rule-kw">MFR</span>
+              <input id="de-mfr" class="ed-input" type="text" placeholder="Manufacturer" />
+            </div>
+            <div class="editor-row">
+              <span class="rule-kw">PROD</span>
+              <input id="de-product" class="ed-input" type="text" placeholder="Product Name" />
+            </div>
+            <div class="editor-row">
+              <span class="rule-kw">SN</span>
+              <input id="de-serial" class="ed-input" type="text" placeholder="SN001" />
+            </div>
+            <div class="editor-row">
+              <button id="de-save">SAVE</button>
+              <button id="de-cancel">CANCEL</button>
+            </div>
+            <div id="de-error" class="editor-error hidden"></div>
           </div>
 
           <div class="control-block">

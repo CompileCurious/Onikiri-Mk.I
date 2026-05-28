@@ -463,6 +463,18 @@ const hidStatusLabel = document.getElementById("hid-status-label");
 const hidStartBtn = document.getElementById("hid-start-btn");
 const hidStopBtn = document.getElementById("hid-stop-btn");
 const hidDeviceSel = document.getElementById("hid-device-profile");
+const hidDeviceAddBtn = document.getElementById("hid-device-add-btn");
+const hidDeviceDelBtn = document.getElementById("hid-device-del-btn");
+const hidDeviceEditor = document.getElementById("hid-device-editor");
+const deLabel = document.getElementById("de-label");
+const deVid = document.getElementById("de-vid");
+const dePid = document.getElementById("de-pid");
+const deMfr = document.getElementById("de-mfr");
+const deProduct = document.getElementById("de-product");
+const deSerial = document.getElementById("de-serial");
+const deSave = document.getElementById("de-save");
+const deCancel = document.getElementById("de-cancel");
+const deError = document.getElementById("de-error");
 const hidSeqName = document.getElementById("hid-seq-name");
 const hidSetupBtn = document.getElementById("hid-setup-btn");
 const hidTeardownBtn = document.getElementById("hid-teardown-btn");
@@ -519,16 +531,9 @@ function applyHidState(state) {
   hidDot.classList.toggle("active", running);
   hidStatusLabel.textContent = running ? "ACTIVE" : "INACTIVE";
 
-  // Populate device profile dropdown (once)
-  if (hidDeviceSel.options.length === 0 && Object.keys(hidDevices).length) {
-    Object.entries(hidDevices).forEach(([id, dev]) => {
-      const opt = document.createElement("option");
-      opt.value = id;
-      opt.textContent = dev.product || id;
-      hidDeviceSel.appendChild(opt);
-    });
-  }
-  if (state.device_profile) hidDeviceSel.value = state.device_profile;
+  // Rebuild device dropdown — always refresh to reflect newly added custom profiles
+  hidDevices = state.devices || {};
+  rebuildDeviceSelect(hidDevices, state.device_profile);
   if (state.sequence_name) hidSeqName.value = state.sequence_name;
 
   renderBlockList(hidBlocks);
@@ -765,7 +770,78 @@ hidTeardownBtn.addEventListener("click", async () => {
 });
 
 hidDeviceSel.addEventListener("change", async () => {
+  updateDeviceDelBtn();
   await apiPost("/api/hid/device/set", { profile_id: hidDeviceSel.value });
+});
+
+// ------------------------------------------------------------------
+// Device ID management (add / remove custom profiles)
+// ------------------------------------------------------------------
+
+function rebuildDeviceSelect(devices, currentProfile) {
+  hidDeviceSel.replaceChildren();
+  Object.entries(devices).forEach(([id, dev]) => {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = (dev.label || dev.product || id) + (dev._custom ? " ★" : "");
+    hidDeviceSel.appendChild(opt);
+  });
+  if (currentProfile && devices[currentProfile]) hidDeviceSel.value = currentProfile;
+  updateDeviceDelBtn();
+}
+
+function updateDeviceDelBtn() {
+  const dev = hidDevices[hidDeviceSel.value];
+  hidDeviceDelBtn.disabled = !dev?._custom;
+}
+
+hidDeviceAddBtn.addEventListener("click", () => {
+  deLabel.value = ""; deVid.value = ""; dePid.value = "";
+  deMfr.value = ""; deProduct.value = ""; deSerial.value = "";
+  deError.classList.add("hidden");
+  hidDeviceEditor.classList.remove("hidden");
+  deLabel.focus();
+});
+
+deCancel.addEventListener("click", () => hidDeviceEditor.classList.add("hidden"));
+
+deSave.addEventListener("click", async () => {
+  deError.classList.add("hidden");
+  const vid = deVid.value.trim();
+  const pid = dePid.value.trim();
+  if (!vid || !pid) {
+    deError.textContent = "VID AND PID ARE REQUIRED";
+    deError.classList.remove("hidden");
+    return;
+  }
+  const label = deLabel.value.trim() || deProduct.value.trim() || `${vid}:${pid}`;
+  const resp = await apiPost("/api/hid/device/add", {
+    label,
+    vid, pid,
+    manufacturer: deMfr.value.trim() || "Custom",
+    product: deProduct.value.trim() || label,
+    serial: deSerial.value.trim() || "CUSTOM001",
+  });
+  if (resp.status !== "ok") {
+    deError.textContent = resp.error || "FAILED TO ADD DEVICE";
+    deError.classList.remove("hidden");
+    return;
+  }
+  hidDevices = resp.devices || hidDevices;
+  hidDeviceEditor.classList.add("hidden");
+  rebuildDeviceSelect(hidDevices, resp.profile_id);
+  await apiPost("/api/hid/device/set", { profile_id: resp.profile_id });
+});
+
+hidDeviceDelBtn.addEventListener("click", async () => {
+  const profileId = hidDeviceSel.value;
+  if (!hidDevices[profileId]?._custom) return;
+  const resp = await apiPost("/api/hid/device/remove", { profile_id: profileId });
+  if (resp.status === "ok") {
+    hidDevices = resp.devices || hidDevices;
+    rebuildDeviceSelect(hidDevices, "generic_keyboard");
+    await apiPost("/api/hid/device/set", { profile_id: "generic_keyboard" });
+  }
 });
 
 // ------------------------------------------------------------------

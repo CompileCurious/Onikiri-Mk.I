@@ -172,6 +172,14 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             response = self.state.request("hid_set_device", **payload)
             self.respond(response)
             return
+        if parsed.path == "/api/hid/device/add":
+            response = self.state.request("hid_add_device", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/device/remove":
+            response = self.state.request("hid_delete_device", **payload)
+            self.respond(response)
+            return
         if parsed.path == "/api/hid/setup_gadget":
             response = self.state.request("hid_setup_gadget", **payload)
             self.respond(response)

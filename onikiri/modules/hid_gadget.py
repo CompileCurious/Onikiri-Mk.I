@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -20,6 +21,7 @@ _KBD_DEVICE = Path("/dev/hidg0")
 _MOUSE_DEVICE = Path("/dev/hidg1")
 _CONFIGFS_BASE = Path("/sys/kernel/config/usb_gadget")
 _GADGET_NAME = "onikiri"
+_CUSTOM_PROFILES_PATH = Path("/userdata/config/device-profiles.json")
 
 
 class HidGadgetModule(BaseModule):
@@ -51,6 +53,8 @@ class HidGadgetModule(BaseModule):
             "move_block_down",
             "replace_blocks",
             "list_devices",
+            "add_device",
+            "delete_device",
             "set_device",
             "get_device_config",
             "setup_gadget",
@@ -104,6 +108,19 @@ class HidGadgetModule(BaseModule):
 
     def _boot_payload_dir(self) -> Path:
         return Path("/mnt/boot/payloads")
+
+    def _load_custom_profiles(self) -> Dict[str, Dict[str, Any]]:
+        """Load user-added USB device profiles from persistent storage."""
+        if not _CUSTOM_PROFILES_PATH.exists():
+            return {}
+        try:
+            return json.loads(_CUSTOM_PROFILES_PATH.read_text())
+        except (json.JSONDecodeError, OSError):
+            return {}
+
+    def _save_custom_profiles(self, profiles: Dict[str, Dict[str, Any]]) -> None:
+        _CUSTOM_PROFILES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _CUSTOM_PROFILES_PATH.write_text(json.dumps(profiles, indent=2))
 
     # ------------------------------------------------------------------
     # Status
@@ -219,16 +236,65 @@ class HidGadgetModule(BaseModule):
     # ------------------------------------------------------------------
 
     def action_list_devices(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        custom = self._load_custom_profiles()
+        devices = {**USB_DEVICE_PROFILES, **custom}
         return {
             "status": "ok",
             "module": self.name,
-            "devices": {k: v for k, v in USB_DEVICE_PROFILES.items()},
+            "devices": devices,
+        }
+
+    def action_add_device(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """Add a new custom USB device profile to /userdata/config/device-profiles.json."""
+        vid = params.get("vid", "").strip()
+        pid = params.get("pid", "").strip()
+        if not vid or not pid:
+            return {"status": "error", "module": self.name, "error": "vid and pid are required"}
+        label = params.get("label") or params.get("product") or f"{vid}:{pid}"
+        safe = re.sub(r'[^a-z0-9]+', '_', label.lower()).strip('_')[:32]
+        profile_id = params.get("id") or safe or "custom_device"
+        profile: Dict[str, Any] = {
+            "label": label,
+            "vid": vid,
+            "pid": pid,
+            "manufacturer": params.get("manufacturer", "Custom"),
+            "product": params.get("product", label),
+            "serial": params.get("serial", "CUSTOM001"),
+            "_custom": True,
+        }
+        custom = self._load_custom_profiles()
+        custom[profile_id] = profile
+        self._save_custom_profiles(custom)
+        return {
+            "status": "ok",
+            "module": self.name,
+            "profile_id": profile_id,
+            "devices": {**USB_DEVICE_PROFILES, **custom},
+        }
+
+    def action_delete_device(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """Remove a user-added device profile (built-in profiles cannot be removed)."""
+        profile_id = params.get("profile_id", "")
+        if profile_id in USB_DEVICE_PROFILES:
+            return {"status": "error", "module": self.name,
+                    "error": "cannot delete a built-in profile"}
+        custom = self._load_custom_profiles()
+        if profile_id not in custom:
+            return {"status": "not_found", "module": self.name, "profile_id": profile_id}
+        del custom[profile_id]
+        self._save_custom_profiles(custom)
+        return {
+            "status": "ok",
+            "module": self.name,
+            "devices": {**USB_DEVICE_PROFILES, **custom},
         }
 
     def action_set_device(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
         store = self._get_store(context)
         profile_id = params.get("profile_id", "generic_keyboard")
-        if profile_id not in USB_DEVICE_PROFILES and not params.get("custom"):
+        custom_profiles = self._load_custom_profiles()
+        all_profiles = {**USB_DEVICE_PROFILES, **custom_profiles}
+        if profile_id not in all_profiles and not params.get("custom"):
             return {"status": "error", "module": self.name, "error": f"unknown profile: {profile_id!r}"}
         store.set_meta("device_profile", profile_id)
         if params.get("custom"):
@@ -377,12 +443,16 @@ class HidGadgetModule(BaseModule):
         meta = store.get_meta()
         profile_id = meta.get("device_profile", "generic_keyboard")
 
+        # Merge built-in and user-added profiles
+        custom_profiles = self._load_custom_profiles()
+        all_profiles: Dict[str, Any] = {**USB_DEVICE_PROFILES, **custom_profiles}
+
         # Priority: /userdata/config/usb-device.json (boot-partition import)
-        #           > store meta custom_device > built-in profile
+        #           > store meta custom_device > built-in/custom profile
         file_cfg = self._usb_device_config(context)
         if file_cfg is not None:
-            if "profile" in file_cfg and file_cfg["profile"] in USB_DEVICE_PROFILES:
-                profile = USB_DEVICE_PROFILES[file_cfg["profile"]]
+            if "profile" in file_cfg and file_cfg["profile"] in all_profiles:
+                profile = all_profiles[file_cfg["profile"]]
             elif "vid" in file_cfg and "pid" in file_cfg:
                 profile = {
                     "vid": file_cfg.get("vid", "0x1d6b"),
@@ -392,10 +462,10 @@ class HidGadgetModule(BaseModule):
                     "serial": file_cfg.get("serial", "0000000001"),
                 }
             else:
-                profile = USB_DEVICE_PROFILES.get(profile_id,
-                                                   USB_DEVICE_PROFILES["generic_keyboard"])
-        elif profile_id in USB_DEVICE_PROFILES:
-            profile = USB_DEVICE_PROFILES[profile_id]
+                profile = all_profiles.get(profile_id,
+                                           USB_DEVICE_PROFILES["generic_keyboard"])
+        elif profile_id in all_profiles:
+            profile = all_profiles[profile_id]
         else:
             profile = meta.get("custom_device", USB_DEVICE_PROFILES["generic_keyboard"])
 
