@@ -12,6 +12,5 @@ dd if=/dev/urandom of=/var/lib/urandom/seed bs=512 count=1 2>/dev/null
 # Sync all filesystems
 sync
 
-# Unmount overlays
-umount /data 2>/dev/null || true
-umount /mnt/overlay 2>/dev/null || true
+# Unmount userdata partition cleanly so ext4 journal is flushed
+umount /userdata 2>/dev/null || true

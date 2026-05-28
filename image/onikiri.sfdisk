@@ -1,6 +1,38 @@
-label: dos
-unit: MiB
+# Onikiri Mk.I — microSD partition layout (MBR/DOS)
+#
+# Partition map (all sizes in 512-byte sectors):
+#
+#  p1  FAT32   boot     sectors   2048–133119   (  64 MiB)  U-Boot, kernel, DTB, boot.scr
+#  p2  squashfs system  sectors 133120–1181695   ( 512 MiB)  read-only system root
+#  p3  ext4    userdata sectors 1181696–…        (rest of card)  persistent user data
+#
+# IMPORTANT — image reflash behaviour
+# ------------------------------------
+# The flashable .img.xz is sized to cover ONLY p1 + p2 (577 MiB).
+# The partition table at sector 0 still defines p3 at sector 1181696.
+# Because Etcher writes only the bytes contained in the image file,
+# everything at or after sector 1181696 on the target card is left
+# completely untouched.  User data in /userdata therefore survives
+# a reflash of the system image.
+#
+# On a blank card the first-boot script (S05userdata-init) creates an
+# ext4 filesystem on p3 and populates the required directory tree.
+# On a reflashed card it detects the existing filesystem and skips init.
+#
+# Minimum card size: 8 GiB.
+# The p3 size below targets a nominal 8 GiB card; the first-boot script
+# runs `growpart` + `resize2fs` to fill larger cards automatically.
+#
+# Reference sector arithmetic (512-byte sectors):
+#   BOOT_START  =    2048
+#   BOOT_SIZE   =  131072   (  64 MiB)
+#   SYS_START   =  133120
+#   SYS_SIZE    = 1048576   ( 512 MiB)
+#   USERDATA_START = 1181696
+#   USERDATA_SIZE  = 15595520  (~7.43 GiB, fills remainder of 8 GiB card)
 
-1 : start=4, size=256, type=c, bootable
-2 : size=1024, type=83
-3 : type=83
+label: dos
+
+1 : start=2048,    size=131072,   type=c, bootable
+2 : start=133120,  size=1048576,  type=83
+3 : start=1181696, size=15595520, type=83

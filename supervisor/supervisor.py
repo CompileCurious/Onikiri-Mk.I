@@ -28,6 +28,18 @@ ONIKIRI_HOME = Path(os.environ.get("ONIKIRI_HOME", "/usr/local/onikiri"))
 PID_FILE = Path("/run/onikiri/supervisor.pid")
 UI_SCRIPT = ONIKIRI_HOME / "ui" / "main.py"
 
+# Persistent userdata paths — live on the ext4 p3 partition (/userdata).
+# These directories survive a reflash of the system image.
+USERDATA_DIR     = Path("/userdata")
+HID_DIR          = USERDATA_DIR / "hid"
+USER_MODULES_DIR = USERDATA_DIR / "modules"
+CONFIG_DIR       = USERDATA_DIR / "config"
+CAPTURES_DIR     = USERDATA_DIR / "captures"
+LOGS_DIR         = USERDATA_DIR / "logs"
+
+# System (read-only) module directory — shipped inside the SquashFS image.
+SYSTEM_MODULES_DIR = ONIKIRI_HOME / "modules"
+
 
 class Supervisor:
     """
@@ -36,11 +48,14 @@ class Supervisor:
     """
 
     def __init__(self) -> None:
-        configure_logging()
+        configure_logging(log_dir=LOGS_DIR)
         self.log = get_logger("supervisor")
-        self.module_loader = ModuleLoader(ONIKIRI_HOME / "modules")
+        # Load system modules first, then user-installed modules from /userdata/modules.
+        # User modules are loaded second so they can supplement or override system ones.
+        self.module_loader = ModuleLoader([SYSTEM_MODULES_DIR, USER_MODULES_DIR])
         self.job_queue = JobQueue()
-        self.engagement = EngagementManager(Path("/data/engagements"))
+        # Engagement captures persist to /userdata/captures/engagements/
+        self.engagement = EngagementManager(CAPTURES_DIR / "engagements")
         self.ipc = IPCServer(self)
         self._ui_process: subprocess.Popen | None = None
         self._running = False
@@ -61,7 +76,8 @@ class Supervisor:
         self._running = True
         self._write_pid()
 
-        self.log.info("Loading modules")
+        self.log.info("Loading modules (system: %s, user: %s)",
+                      SYSTEM_MODULES_DIR, USER_MODULES_DIR)
         await self.module_loader.load_all()
 
         self.log.info("Starting job queue")
@@ -99,7 +115,14 @@ class Supervisor:
         PID_FILE.write_text(str(os.getpid()))
 
     def _launch_ui(self) -> None:
-        env = {**os.environ, "ONIKIRI_HOME": str(ONIKIRI_HOME)}
+        env = {
+            **os.environ,
+            "ONIKIRI_HOME": str(ONIKIRI_HOME),
+            "ONIKIRI_HID_DIR": str(HID_DIR),
+            "ONIKIRI_CONFIG_DIR": str(CONFIG_DIR),
+            "ONIKIRI_CAPTURES_DIR": str(CAPTURES_DIR),
+            "ONIKIRI_LOGS_DIR": str(LOGS_DIR),
+        }
         self._ui_process = subprocess.Popen(
             [sys.executable, str(UI_SCRIPT)],
             env=env,

@@ -145,9 +145,9 @@ class SysInfoModule(BaseModule):
         # IPC socket
         from pathlib import Path as P
         checks["ipc_socket"] = P("/run/onikiri/supervisor.sock").exists()
-        # /data writable
+        # /userdata writable
         try:
-            test_path = Path("/data/.self_test")
+            test_path = Path("/userdata/.self_test")
             test_path.write_text("ok")
             test_path.unlink()
             checks["data_writable"] = True

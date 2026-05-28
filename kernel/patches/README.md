@@ -1,6 +1,6 @@
 # ⚠️ AI-Generated Content Notice
 
-**This documentation and much of the project were created with significant assistance from AI tools (including GitHub Copilot and GPT models), as this is a solo developer project. Please review carefully.**
+**This documentation and much of the project were created with significant assistance from AI tools (including GitHub Copilot powered by Anthropic Claude), as this is a solo developer project. Please review carefully.**
 
 # H616 Hardware Support Patches
 

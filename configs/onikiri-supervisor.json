@@ -1,17 +1,16 @@
 {
   "socket_path": "/run/onikiri/supervisor.sock",
-  "log_path": "/var/log/onikiri/supervisor.log",
-  "engagement_data_dir": "/data/engagements",
+  "log_path": "/userdata/logs/supervisor.log",
+  "engagement_data_dir": "/userdata/captures/engagements",
   "overlay_paths": [
-    "/overlay/data",
-    "/data/engagements"
+    "/userdata/captures/engagements"
   ],
   "public_mode": true,
   "allow_live_operations": false,
-  "mitm_rules_path": "/data/engagements/mitm-rules.json",
-  "mitm_ca_dir": "/data/engagements/ca",
-  "hid_sequence_path": "/data/engagements/hid-sequence.json",
-  "hid_payload_dir": "/mnt/sdcard/payloads",
+  "mitm_rules_path": "/userdata/config/mitm-rules.json",
+  "mitm_ca_dir": "/userdata/config/ca",
+  "hid_sequence_path": "/userdata/hid/hid-sequence.json",
+  "hid_payload_dir": "/userdata/captures/payloads",
   "ui": {
     "listen": "127.0.0.1",
     "port": 8171,

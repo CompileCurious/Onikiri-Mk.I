@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
 # build/mkimage.sh — Produce a partitioned microSD image for Onikiri Mk.I
 #
-# Partition layout (GPT):
-#   p1  FAT32   64 MiB   boot   — U-Boot SPL, U-Boot, Image, DTB, boot.scr
-#   p2  SquashFS ~256 MiB root  — read-only SquashFS root
-#   p3  ext4    rest of card    — OverlayFS upper/work + engagement data
+# Partition layout (MBR/DOS):
+#   p1  FAT32     64 MiB   boot     — U-Boot SPL, U-Boot, Image, DTB, boot.scr
+#   p2  SquashFS 512 MiB   system   — read-only immutable system root
+#   p3  ext4     rest      userdata — persistent user data (/userdata)
+#
+# Persistence model
+# -----------------
+# The image file is sized to cover ONLY p1 + p2 (577 MiB).  The MBR
+# partition table still defines p3 at sector 1181696 so the kernel can
+# find it, but no bytes of p3 are written into the image file itself.
+# When Etcher flashes the image onto a card it writes exactly 577 MiB;
+# everything at or beyond sector 1181696 is left intact.  User files
+# stored in /userdata therefore survive a reflash of the system image.
+#
+# First-boot handling:
+#   S05userdata-init (in /etc/init.d/) detects whether p3 already has
+#   a valid ext4 filesystem.  If not it creates one and populates the
+#   required /userdata sub-directories.  If yes it simply mounts the
+#   existing filesystem and skips initialisation.
 #
 # Usage:
 #   ./build/mkimage.sh --kernel <Image> --dtb <dtb> --rootfs <sqfs> --output <img>
@@ -19,8 +34,7 @@ DTB=""
 ROOTFS=""
 OUTPUT=""
 
-# ── Require root (losetup, mount, mkfs need elevated privileges) ──────────────
-# Must come BEFORE argument parsing so $@ is still intact when re-execing.
+# ── Require root (losetup, mount, sfdisk, mkfs need elevated privileges) ──────
 if [[ $EUID -ne 0 ]]; then
     exec sudo -E "$0" "$@"
 fi
@@ -41,32 +55,40 @@ done
 [[ -n "${ROOTFS}" ]] || { echo "Missing --rootfs" >&2; exit 1; }
 [[ -n "${OUTPUT}" ]] || { echo "Missing --output" >&2; exit 1; }
 
-# ── Sizes ─────────────────────────────────────────────────────────────────────
-IMG_SIZE_MB=3072       # 3 GiB total image (for 4 GiB card minimum)
-BOOT_SIZE_MB=64
-ROOTFS_SIZE_MB=512
-# Overlay takes the rest
+# ── Sector arithmetic (512-byte sectors) ──────────────────────────────────────
+# Image contains ONLY p1 + p2.  p3 is declared in the partition table
+# but its data area lives beyond the image boundary on the real card.
+BOOT_START_S=2048
+BOOT_SIZE_S=131072          # 64 MiB
+SYSTEM_START_S=133120
+SYSTEM_SIZE_S=1048576       # 512 MiB
+USERDATA_START_S=1181696    # immediately after p2; this is also the image end
+USERDATA_SIZE_S=15595520    # ~7.43 GiB (targets 8 GiB minimum card)
+                            # first-boot growpart expands this on larger cards
 
-BOOT_START_MB=1        # Leave 1 MiB for SPL/U-Boot before first partition
-BOOT_END_MB=$((BOOT_START_MB + BOOT_SIZE_MB))
-ROOTFS_END_MB=$((BOOT_END_MB + ROOTFS_SIZE_MB))
+# Image covers exactly sectors 0 – (USERDATA_START_S-1)
+IMG_SECTORS=${USERDATA_START_S}
+IMG_BYTES=$(( IMG_SECTORS * 512 ))   # 604,274,688 bytes ≈ 576.5 MiB
 
 log() { echo "[mkimage] $*"; }
 
-# ── Create empty image ────────────────────────────────────────────────────────
-log "Allocating ${IMG_SIZE_MB} MiB image: ${OUTPUT}"
-dd if=/dev/zero of="${OUTPUT}" bs=1M count="${IMG_SIZE_MB}" status=progress
+# ── Create empty image (exactly p1+p2 size, no p3 bytes) ─────────────────────
+log "Allocating image: ${OUTPUT} (${IMG_BYTES} bytes, sectors 0-$((IMG_SECTORS-1)))"
+truncate -s "${IMG_BYTES}" "${OUTPUT}"
 
-# ── Partition ─────────────────────────────────────────────────────────────────
-log "Partitioning"
-parted -s "${OUTPUT}" -- \
-    mklabel gpt \
-    mkpart boot fat32  "${BOOT_START_MB}MiB"  "${BOOT_END_MB}MiB" \
-    set 1 boot on \
-    mkpart root        "${BOOT_END_MB}MiB"    "${ROOTFS_END_MB}MiB" \
-    mkpart overlay ext4 "${ROOTFS_END_MB}MiB" "100%"
+# ── Write MBR partition table ─────────────────────────────────────────────────
+# p3 extends beyond the image file — sfdisk will warn but must still write.
+# --force bypasses the "partition exceeds device" error.
+log "Writing MBR partition table (p3 spans beyond image boundary by design)"
+sfdisk --force "${OUTPUT}" << SFDISK_EOF 2>&1 | grep -v "^$" | grep -v "Re-reading" || true
+label: dos
 
-# ── Mount partitions via loopback ─────────────────────────────────────────────
+1 : start=${BOOT_START_S},    size=${BOOT_SIZE_S},    type=c, bootable
+2 : start=${SYSTEM_START_S},  size=${SYSTEM_SIZE_S},  type=83
+3 : start=${USERDATA_START_S},size=${USERDATA_SIZE_S}, type=83
+SFDISK_EOF
+
+# ── Attach loop device (p1 + p2 only; p3 is beyond the file) ─────────────────
 LOOP=$(losetup --find --show --partscan "${OUTPUT}")
 log "Loop device: ${LOOP}"
 
@@ -79,57 +101,63 @@ trap cleanup EXIT
 
 BOOT_DEV="${LOOP}p1"
 ROOT_DEV="${LOOP}p2"
-DATA_DEV="${LOOP}p3"
+# NOTE: ${LOOP}p3 is intentionally NOT formatted here.
+# On the real card p3 is initialised by S05userdata-init on first boot.
 
-# ── Format ────────────────────────────────────────────────────────────────────
-log "Formatting partitions"
-mkfs.fat -F32 -n "BOOT" "${BOOT_DEV}"
-# Root partition holds SquashFS — no mkfs needed (will dd directly)
-mkfs.ext4 -L "onikiri-data" -F "${DATA_DEV}"
+# ── Format boot partition ─────────────────────────────────────────────────────
+log "Formatting p1 (FAT32 boot)"
+mkfs.fat -F32 -n "ONIKIRI-BOOT" "${BOOT_DEV}"
 
 # ── Boot partition contents ────────────────────────────────────────────────────
 TMP_BOOT=$(mktemp -d)
 mount "${BOOT_DEV}" "${TMP_BOOT}"
 
-install -m644 "${KERNEL}"                         "${TMP_BOOT}/Image"
-install -m644 "${DTB}"                            "${TMP_BOOT}/sun50i-h616-onikiri.dtb"
+install -m644 "${KERNEL}" "${TMP_BOOT}/Image"
+install -m644 "${DTB}"    "${TMP_BOOT}/sun50i-h616-onikiri.dtb"
 
-# Compile boot script
 if command -v mkimage >/dev/null 2>&1; then
     mkimage -C none -A arm64 -T script -d \
         "${REPO_ROOT}/config/uboot/boot.cmd" \
         "${TMP_BOOT}/boot.scr"
 else
-    log "[WARN] mkimage not found — copy boot.cmd manually"
+    log "[WARN] mkimage not found — copying boot.cmd as fallback"
     install -m644 "${REPO_ROOT}/config/uboot/boot.cmd" "${TMP_BOOT}/boot.cmd"
 fi
 
-# U-Boot binaries (must be built separately — see docs/ARCHITECTURE.md)
 if [[ -f "${REPO_ROOT}/out/u-boot-sunxi-with-spl.bin" ]]; then
     install -m644 "${REPO_ROOT}/out/u-boot-sunxi-with-spl.bin" "${TMP_BOOT}/"
-    log "U-Boot SPL installed"
+    log "U-Boot binary installed to boot partition"
 else
     log "[WARN] U-Boot binary not found at out/u-boot-sunxi-with-spl.bin"
-    log "       Write SPL manually: dd if=u-boot-sunxi-with-spl.bin of=${OUTPUT} bs=8k seek=1"
+    log "       Write SPL manually after flashing:"
+    log "         dd if=u-boot-sunxi-with-spl.bin of=<card> bs=8k seek=1 conv=notrunc"
 fi
 
 sync
 umount "${TMP_BOOT}"
 rmdir "${TMP_BOOT}"
 
-# ── Write SquashFS root ────────────────────────────────────────────────────────
-log "Writing SquashFS root"
-SQFS_SIZE=$(stat -c%s "${ROOTFS}")
-dd if="${ROOTFS}" of="${ROOT_DEV}" bs=4M status=progress
+# ── Write SquashFS system root directly to p2 ─────────────────────────────────
+log "Writing SquashFS system image to p2"
+dd if="${ROOTFS}" of="${ROOT_DEV}" bs=4M status=progress conv=fsync
 
-# ── U-Boot SPL (written at offset 8 KiB, before partition 1) ─────────────────
+# ── U-Boot SPL at 8 KiB offset (before any partition) ────────────────────────
 if [[ -f "${REPO_ROOT}/out/u-boot-sunxi-with-spl.bin" ]]; then
-    log "Writing U-Boot SPL at 8 KiB offset"
+    log "Writing U-Boot SPL at 8 KiB offset in image"
     dd if="${REPO_ROOT}/out/u-boot-sunxi-with-spl.bin" \
        of="${OUTPUT}" bs=8k seek=1 conv=notrunc status=none
 fi
 
 sync
+
 log "Image complete: ${OUTPUT}"
-log "Partitions:"
-parted -s "${OUTPUT}" print
+log "  Size : $(du -h "${OUTPUT}" | cut -f1) (uncompressed)"
+log "  p1   : boot (FAT32, 64 MiB)"
+log "  p2   : system (SquashFS, 512 MiB)"
+log "  p3   : userdata (ext4, created on first boot — NOT in this image file)"
+log ""
+log "Compress for Etcher:"
+log "  xz -T0 -9 --keep ${OUTPUT}"
+log ""
+log "Flash with Etcher: the image covers only p1+p2."
+log "  Sectors beyond ${USERDATA_START_S} (userdata) are never touched."

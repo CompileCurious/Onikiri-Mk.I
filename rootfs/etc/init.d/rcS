@@ -22,26 +22,41 @@ mount -t tmpfs tmpfs /tmp  -o mode=1777,nosuid,nodev,size=32m
 # ── Hostname ──────────────────────────────────────────────────────────────────
 hostname -F /etc/hostname
 
-# ── OverlayFS — writable layer over read-only SquashFS ───────────────────────
-# Overlay upper/work dirs live on a small tmpfs partition (mmcblk0p3)
-# or fall back to tmpfs in RAM if the data partition is absent.
-OVERLAY_DEV=/dev/mmcblk0p3
-OVERLAY_MOUNT=/mnt/overlay
+# ── Userdata partition (/dev/mmcblk0p3) ──────────────────────────────────────
+# Mount the persistent ext4 userdata partition early so the supervisor and
+# all modules have access to /userdata before they start.
+#
+# On a fresh card (first-ever flash) p3 may not yet have an ext4 filesystem.
+# S05userdata-init handles that: it creates the filesystem and directory tree
+# if missing, and expands the partition to fill the card.
+#
+# If p3 is absent entirely (e.g. development/emulation without a real card),
+# fall back to a tmpfs so the supervisor still starts — data won't persist.
 
-mkdir -p "${OVERLAY_MOUNT}"
+USERDATA_DEV=/dev/mmcblk0p3
+USERDATA_MNT=/userdata
 
-if blkid "${OVERLAY_DEV}" >/dev/null 2>&1; then
-    mount -t ext4 "${OVERLAY_DEV}" "${OVERLAY_MOUNT}" -o noatime
+mkdir -p "${USERDATA_MNT}"
+
+if blkid "${USERDATA_DEV}" >/dev/null 2>&1; then
+    # Device exists — S05userdata-init will create ext4 if not already present
+    /etc/init.d/S05userdata-init
+    mount -t ext4 "${USERDATA_DEV}" "${USERDATA_MNT}" -o noatime || {
+        echo "[rcS] WARNING: failed to mount ${USERDATA_DEV} — using tmpfs" >&2
+        mount -t tmpfs tmpfs "${USERDATA_MNT}" -o mode=0755,size=512m
+    }
 else
-    mount -t tmpfs tmpfs "${OVERLAY_MOUNT}" -o mode=0755,size=512m
+    echo "[rcS] WARNING: ${USERDATA_DEV} not found — using tmpfs for /userdata" >&2
+    mount -t tmpfs tmpfs "${USERDATA_MNT}" -o mode=0755,size=512m
 fi
 
-mkdir -p "${OVERLAY_MOUNT}/upper"
-mkdir -p "${OVERLAY_MOUNT}/work"
-mkdir -p "${OVERLAY_MOUNT}/data"
-
-# /data — engagement data storage (writable via overlay)
-mount -t tmpfs tmpfs /data -o mode=0700,nosuid,nodev,size=256m
+# Ensure required sub-directories exist (no-op if already present)
+mkdir -p \
+    "${USERDATA_MNT}/hid" \
+    "${USERDATA_MNT}/modules" \
+    "${USERDATA_MNT}/config" \
+    "${USERDATA_MNT}/captures" \
+    "${USERDATA_MNT}/logs"
 
 # ── Loopback interface ────────────────────────────────────────────────────────
 ip link set lo up

@@ -13,7 +13,7 @@ from typing import Any
 
 from .base_module import BaseModule, ModuleState
 
-_ENGAGEMENT_DIR = Path("/data/engagements")
+_ENGAGEMENT_DIR = Path("/userdata/captures/engagements")
 
 
 class EngagementLoaderModule(BaseModule):

@@ -126,7 +126,7 @@ class MitmModule(BaseModule):
         if self._store is None:
             path = Path(
                 context.config.get(
-                    "mitm_rules_path", "/data/engagements/mitm-rules.json"
+                    "mitm_rules_path", "/userdata/config/mitm-rules.json"
                 )
             )
             self._store = RuleStore(path)
@@ -437,7 +437,7 @@ class MitmModule(BaseModule):
             )
 
         ca_name = params.get("ca_name", "Onikiri-CA")
-        ca_dir = Path(params.get("ca_dir", context.config.get("mitm_ca_dir", "/data/engagements/ca")))
+        ca_dir = Path(params.get("ca_dir", context.config.get("mitm_ca_dir", "/userdata/config/ca")))
         ca_dir.mkdir(parents=True, exist_ok=True)
         key_path = ca_dir / "ca.key"
         cert_path = ca_dir / "ca.crt"

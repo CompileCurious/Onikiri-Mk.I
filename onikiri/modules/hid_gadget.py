@@ -70,14 +70,14 @@ class HidGadgetModule(BaseModule):
         if self._store is None:
             path = Path(
                 context.config.get(
-                    "hid_sequence_path", "/data/engagements/hid-sequence.json"
+                    "hid_sequence_path", "/userdata/hid/hid-sequence.json"
                 )
             )
             self._store = BlockStore(path)
         return self._store
 
     def _payload_dir(self, context: SupervisorContext) -> Path:
-        return Path(context.config.get("hid_payload_dir", "/mnt/sdcard/payloads"))
+        return Path(context.config.get("hid_payload_dir", "/userdata/captures/payloads"))
 
     # ------------------------------------------------------------------
     # Status

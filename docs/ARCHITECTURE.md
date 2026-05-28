@@ -1,6 +1,6 @@
 # ⚠️ AI-Generated Content Notice
 
-**This documentation and much of the project were created with significant assistance from AI tools (including GitHub Copilot and GPT models), as this is a solo developer project. Please review carefully.**
+**This documentation and much of the project were created with significant assistance from AI tools (including GitHub Copilot powered by Anthropic Claude), as this is a solo developer project. Please review carefully.**
 
 # Onikiri Mk.I — System Architecture
 
@@ -36,18 +36,27 @@ Power on
             └─ Load Image + DTB from FAT p1
             └─ booti → Linux kernel
                   └─ Kernel: devtmpfs, SoC init, display, touch, MMC
+                  └─ initramfs/init
+                       mount squashfs p2 as /newroot (read-only)
+                       switch_root → /newroot
                   └─ BusyBox init (PID 1)
                        ├─ sysinit: /etc/init.d/rcS
                        │     mount proc, sysfs, devtmpfs, tmpfs
-                       │     set up OverlayFS
+                       │     S05userdata-init → mkfs.ext4 if needed
+                       │     mount /userdata (ext4 p3, persistent)
                        │     set hostname, lo up
                        │     modprobe 88x2cs (Wi-Fi)
                        ├─ respawn: start-supervisor.sh
                        │     python3 supervisor/supervisor.py
-                       │       load modules
+                       │       load modules (system + /userdata/modules)
                        │       start IPC server (/run/onikiri/supervisor.sock)
                        │       spawn UI process
                        │         kivy OnikiriApp (KMS/DRM, no X11)
+                       │         connect to IPC socket
+                       │         render 3×2 panel grid
+                       └─ once: /etc/init.d/S10network
+                             wlan0 up, wpa_supplicant if conf exists
+```
                        │         connect to IPC socket
                        │         render 3×2 panel grid
                        └─ once: /etc/init.d/S10network
@@ -137,51 +146,77 @@ All UI ↔ Supervisor communication is JSON over a Unix domain socket at
 ## Filesystem Layout
 
 ```
-/                       — SquashFS read-only root (mmcblk0p2)
+/                           — SquashFS read-only root (mmcblk0p2, immutable)
 ├── etc/
-│   ├── inittab         — BusyBox init config
-│   ├── fstab           — mount table
+│   ├── inittab             — BusyBox init config
+│   ├── fstab               — mount table (/, /userdata, tmpfs mounts)
 │   ├── init.d/
-│   │   ├── rcS         — main sysinit
-│   │   ├── rcK         — shutdown
-│   │   └── S10network  — background network init
-│   └── onikiri.conf    — system config
+│   │   ├── rcS             — main sysinit (mounts /userdata, calls S05userdata-init)
+│   │   ├── rcK             — shutdown (flushes /userdata journal)
+│   │   ├── S05userdata-init — first-boot: creates ext4 + dir tree on p3
+│   │   └── S10network      — background network init
+│   └── onikiri.conf        — system config
 ├── usr/local/onikiri/
-│   ├── supervisor/     — Python supervisor
-│   ├── modules/        — Python pentesting modules
-│   ├── ui/             — Kivy HMI application
+│   ├── supervisor/         — Python supervisor
+│   ├── modules/            — system Python pentesting modules (read-only)
+│   ├── ui/                 — Kivy HMI application
 │   └── bin/
 │       └── start-supervisor.sh
-├── proc/               — procfs (mounted at runtime)
-├── sys/                — sysfs  (mounted at runtime)
-├── dev/                — devtmpfs (mounted at runtime)
-├── run/                — tmpfs  (mounted at runtime)
+├── userdata/               — mount point only (populated by p3 at runtime)
+├── proc/                   — procfs  (mounted at runtime)
+├── sys/                    — sysfs   (mounted at runtime)
+├── dev/                    — devtmpfs (mounted at runtime)
+├── run/                    — tmpfs   (mounted at runtime)
 │   └── onikiri/
 │       ├── supervisor.sock
 │       └── supervisor.pid
-├── tmp/                — tmpfs  (mounted at runtime)
-└── data/ → /mnt/overlay/data   — engagement data (OverlayFS)
+└── tmp/                    — tmpfs   (mounted at runtime)
 
-/mnt/overlay/           — ext4 writable layer (mmcblk0p3)
-├── upper/              — OverlayFS upper dir
-├── work/               — OverlayFS work dir
-└── data/
-    ├── engagements/    — engagement JSON profiles
-    ├── payloads/       — staged payloads
-    └── logs/           — persistent logs
+/userdata/                  — ext4 persistent partition (mmcblk0p3)
+│                             Survives reflash of the system image.
+│                             Populated on first boot by S05userdata-init.
+├── hid/                    — user HID scripts and sequences
+├── modules/                — user-installed Python modules (override system modules)
+├── config/                 — module configs, mitm-rules.json, CA certs
+├── captures/               — engagement profiles, pcaps, payload output, mitm flows
+│   ├── engagements/        — JSON engagement profiles
+│   └── payloads/           — staged delivery payloads
+└── logs/                   — persistent logs (supervisor.log, module logs)
 ```
+
+---
+
+## Persistence Model
+
+| Layer | Device | Mount | Survives reflash? |
+|-------|--------|-------|-------------------|
+| System root | `/dev/mmcblk0p2` (SquashFS) | `/` | No — overwritten |
+| Boot partition | `/dev/mmcblk0p1` (FAT32) | boot-only | No — overwritten |
+| **Userdata** | `/dev/mmcblk0p3` (ext4) | `/userdata` | **Yes** |
+| Runtime state | tmpfs | `/run`, `/tmp` | No — RAM only |
+
+The flashable `.img.xz` is sized to cover only p1 + p2 (≈ 577 MiB).  
+The MBR partition table in the image still defines p3 at sector 1181696.  
+Etcher writes 577 MiB; everything at or beyond sector 1181696 is never touched.
+
+### First-boot flow (`S05userdata-init`)
+
+1. If p3 has no ext4 filesystem → `mkfs.ext4`, grow to fill card, create dirs, write sentinel
+2. If p3 has ext4 + sentinel → mount and skip (userdata preserved)
+3. Directories created: `hid/`, `modules/`, `config/`, `captures/`, `logs/`
 
 ---
 
 ## Security Model
 
 - **Root filesystem** is SquashFS, mounted read-only. Cannot be modified at
-  runtime.
-- **Writable state** is isolated in `/data` (OverlayFS upper layer on ext4 p3,
-  or tmpfs on RAM if p3 absent).
+  runtime. No OverlayFS upper layer — the system is truly stateless.
+- **Persistent user data** lives exclusively in `/userdata` (ext4, p3).
+  Modules, configs, captures, and logs are all in `/userdata`.
+- **Runtime scratch** uses tmpfs (`/run`, `/tmp`) and is discarded on every boot.
 - **Engagement wipe** calls `wipe_engagement` via IPC, which removes the
-  `/data/engagements` tree and remounts a clean tmpfs. This is instantaneous
-  and leaves no forensic artefacts in RAM.
+  `/userdata/captures/engagements` tree. Only capture data is wiped;
+  user HID scripts, configs, and installed modules are left intact.
 - **IPC socket** permissions are `0600` (root only). The UI process runs as
   the same UID as the supervisor.
 - **No network daemons** are started by default. Wi-Fi comes up only when an

@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List
 
-_RULES_PATH = os.environ.get("ONIKIRI_RULES_PATH", "/data/engagements/mitm-rules.json")
+_RULES_PATH = os.environ.get("ONIKIRI_RULES_PATH", "/userdata/config/mitm-rules.json")
 
 
 def _load_rules() -> List[Dict[str, Any]]:

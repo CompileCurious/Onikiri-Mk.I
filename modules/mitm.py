@@ -145,7 +145,7 @@ class MitmModule(BaseModule):
         self._proxy_proc = await asyncio.create_subprocess_exec(
             "mitmdump", "--mode", "transparent",
             "--listen-port", str(port),
-            "--save-stream-file", "/data/mitm_capture.flows",
+            "--save-stream-file", "/userdata/captures/mitm_capture.flows",
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )

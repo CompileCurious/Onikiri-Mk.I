@@ -183,12 +183,13 @@ assemble_rootfs() {
     fi
 
     # Essential directory tree
-    for d in bin sbin usr/bin usr/sbin lib etc etc/init.d proc sys dev run tmp data \
+    for d in bin sbin usr/bin usr/sbin lib etc etc/init.d proc sys dev run tmp \
+              userdata \
               usr/local/onikiri/supervisor \
               usr/local/onikiri/modules \
               usr/local/onikiri/ui \
               usr/local/onikiri/bin \
-              var/lib/urandom mnt/overlay; do
+              var/lib/urandom; do
         mkdir -p "${ROOTFS_STAGE}/${d}"
     done
 
@@ -205,13 +206,14 @@ assemble_rootfs() {
     log "         See build/packages.list for required packages."
 
     # Copy init scripts
-    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcS"     "${ROOTFS_STAGE}/etc/init.d/rcS"
-    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcK"     "${ROOTFS_STAGE}/etc/init.d/rcK"
-    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S10network" "${ROOTFS_STAGE}/etc/init.d/S10network"
-    install -m644 "${REPO_ROOT}/rootfs/etc/inittab"        "${ROOTFS_STAGE}/etc/inittab"
-    install -m644 "${REPO_ROOT}/rootfs/etc/fstab"          "${ROOTFS_STAGE}/etc/fstab"
-    install -m644 "${REPO_ROOT}/rootfs/etc/hostname"       "${ROOTFS_STAGE}/etc/hostname"
-    install -m644 "${REPO_ROOT}/rootfs/etc/hosts"          "${ROOTFS_STAGE}/etc/hosts"
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcS"              "${ROOTFS_STAGE}/etc/init.d/rcS"
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcK"              "${ROOTFS_STAGE}/etc/init.d/rcK"
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S05userdata-init" "${ROOTFS_STAGE}/etc/init.d/S05userdata-init"
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S10network"       "${ROOTFS_STAGE}/etc/init.d/S10network"
+    install -m644 "${REPO_ROOT}/rootfs/etc/inittab"                 "${ROOTFS_STAGE}/etc/inittab"
+    install -m644 "${REPO_ROOT}/rootfs/etc/fstab"                   "${ROOTFS_STAGE}/etc/fstab"
+    install -m644 "${REPO_ROOT}/rootfs/etc/hostname"                "${ROOTFS_STAGE}/etc/hostname"
+    install -m644 "${REPO_ROOT}/rootfs/etc/hosts"                   "${ROOTFS_STAGE}/etc/hosts"
 
     # Boot hardware check banner
     install -m755 "${REPO_ROOT}/system/init/boot-check.sh" \
@@ -240,7 +242,7 @@ build_squashfs() {
         -comp zstd \
         -Xcompression-level 19 \
         -noappend \
-        -e proc sys dev run tmp \
+        -e proc sys dev run tmp userdata \
         2>&1 | tail -5
     log "SquashFS: $(du -h "${SQUASHFS_IMG}" | cut -f1)"
 }

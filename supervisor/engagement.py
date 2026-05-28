@@ -2,7 +2,7 @@
 Onikiri Mk.I — Engagement Manager
 Loads, persists, and wipes engagement profiles.
 
-An engagement profile is a JSON file stored in /data/engagements/<name>.json.
+An engagement profile is a JSON file stored in /userdata/captures/engagements/<name>.json.
 It stores target scope, network credentials, active modules, and notes.
 """
 
@@ -55,7 +55,7 @@ class EngagementManager:
     async def wipe(self) -> dict:
         """
         Clear all engagement data instantly.
-        Removes the entire /data/engagements directory and resets state.
+        Removes the entire /userdata/captures/engagements directory and resets state.
         This is the field-wipe function.
         """
         if self._dir.exists():

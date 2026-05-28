@@ -1,29 +1,36 @@
 #!/bin/busybox sh
+# Onikiri Mk.I initramfs init
+#
+# Mounts the immutable SquashFS system partition (p2) as the new root
+# and executes switch_root.  No OverlayFS — the system root is read-only.
+#
+# Persistent user data (/userdata) lives on p3 (ext4) and is mounted
+# by /etc/init.d/rcS + S05userdata-init in the real root, not here.
+#
+# Kernel cmdline parameters:
+#   rofs_device=<dev>   SquashFS system partition  (default: /dev/mmcblk0p2)
+
 set -eu
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
+mount -t proc     proc     /proc
+mount -t sysfs    sysfs    /sys
 mount -t devtmpfs devtmpfs /dev
-mount -t tmpfs -o mode=0755,size=32m tmpfs /run
-mount -t tmpfs -o mode=1777,size=64m tmpfs /tmp
+mount -t tmpfs    -o mode=0755,size=32m tmpfs /run
+mount -t tmpfs    -o mode=1777,size=64m tmpfs /tmp
 
 ROFS_DEVICE="${rofs_device:-/dev/mmcblk0p2}"
-OVERLAY_DEVICE="${overlay_device:-/dev/mmcblk0p3}"
 
-mkdir -p /rofs /overlay /newroot
-mount -t squashfs -o ro "${ROFS_DEVICE}" /rofs
-mount -t ext4 -o noatime,nodiratime "${OVERLAY_DEVICE}" /overlay
-mkdir -p /overlay/upper /overlay/work /overlay/data /newroot
-mount -t overlay overlay \
-  -o lowerdir=/rofs,upperdir=/overlay/upper,workdir=/overlay/work /newroot
+mkdir -p /newroot
+mount -t squashfs -o ro "${ROFS_DEVICE}" /newroot
 
-mkdir -p /newroot/rofs /newroot/overlay
-mount --move /rofs /newroot/rofs
-mount --move /overlay /newroot/overlay
+# Move virtual filesystems into the new root so they are available
+# before rcS runs inside the squashfs.
+mkdir -p /newroot/proc /newroot/sys /newroot/dev /newroot/run /newroot/tmp
 mount --move /proc /newroot/proc
-mount --move /sys /newroot/sys
-mount --move /dev /newroot/dev
-mount --move /run /newroot/run
-mount --move /tmp /newroot/tmp
+mount --move /sys  /newroot/sys
+mount --move /dev  /newroot/dev
+mount --move /run  /newroot/run
+mount --move /tmp  /newroot/tmp
+
 exec switch_root /newroot /sbin/init

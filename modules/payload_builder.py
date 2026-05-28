@@ -1,7 +1,7 @@
 """
 Onikiri Mk.I — Payload Builder Module
 Generates and stages deployment payloads (scripts, droppers).
-Outputs to /data/payloads/ for delivery via HID, HTTP server, or USB mass storage.
+Outputs to /userdata/captures/payloads/ for delivery via HID, HTTP server, or USB mass storage.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Any
 
 from .base_module import BaseModule, ModuleState
 
-_PAYLOAD_DIR = Path("/data/payloads")
+_PAYLOAD_DIR = Path("/userdata/captures/payloads")
 
 
 class PayloadBuilderModule(BaseModule):

@@ -1,0 +1,96 @@
+#!/bin/sh
+# /etc/init.d/S05userdata-init — Onikiri Mk.I userdata partition initialiser
+#
+# Called by rcS before mounting /userdata.
+#
+# Responsibilities
+# ────────────────
+# 1. If /dev/mmcblk0p3 does not yet have a valid ext4 filesystem (fresh card
+#    or first-ever flash), create one and optionally grow the partition to
+#    fill the card (requires growpart/resize2fs in the system image).
+#
+# 2. If the card is larger than the partition table entry created by mkimage.sh
+#    (which targets an 8 GiB card), expand p3 to fill the actual card.
+#
+# 3. After mkimage.sh this script is called BEFORE the mount in rcS so
+#    the newly created filesystem is immediately mountable.
+#
+# Sentinel file
+# ─────────────
+# After initialisation a file .onikiri_initialized is written inside
+# /userdata.  On subsequent boots (and after reflash, where p3 is preserved)
+# the presence of a valid ext4 + sentinel means "do nothing".
+
+USERDATA_DEV=/dev/mmcblk0p3
+SENTINEL_DIR=/userdata
+SENTINEL="${SENTINEL_DIR}/.onikiri_initialized"
+
+log() { echo "[S05userdata-init] $*" >&2; }
+
+# ── Step 1: check / create filesystem ────────────────────────────────────────
+if ! blkid -s TYPE "${USERDATA_DEV}" | grep -q ext4; then
+    log "No ext4 filesystem on ${USERDATA_DEV} — creating one (first flash)"
+
+    # Optionally expand p3 to fill the card before formatting.
+    # growpart is a shell script from cloud-utils; if absent, skip.
+    if command -v growpart >/dev/null 2>&1; then
+        log "Expanding partition 3 to fill card"
+        growpart /dev/mmcblk0 3 2>/dev/null || true
+    fi
+
+    mkfs.ext4 -L "onikiri-userdata" -F "${USERDATA_DEV}" \
+        -E lazy_itable_init=0,lazy_journal_init=0
+    log "ext4 filesystem created on ${USERDATA_DEV}"
+else
+    # ── Step 2: filesystem exists — check if we should resize ────────────────
+    # If the card is larger than the partition entry expects, resize.
+    # This is a no-op if the filesystem already fills the partition.
+    if command -v resize2fs >/dev/null 2>&1 && \
+       command -v growpart >/dev/null 2>&1; then
+        PART_SECTORS=$(cat /sys/block/mmcblk0/mmcblk0p3/size 2>/dev/null || echo 0)
+        FS_BLOCKS=$(dumpe2fs -h "${USERDATA_DEV}" 2>/dev/null \
+            | awk '/^Block count:/ { print $3 }')
+        FS_BLOCK_SIZE=$(dumpe2fs -h "${USERDATA_DEV}" 2>/dev/null \
+            | awk '/^Block size:/ { print $3 }')
+        if [ -n "${PART_SECTORS}" ] && [ "${PART_SECTORS}" -gt 0 ] && \
+           [ -n "${FS_BLOCKS}" ] && [ -n "${FS_BLOCK_SIZE}" ]; then
+            PART_BYTES=$(( PART_SECTORS * 512 ))
+            FS_BYTES=$(( FS_BLOCKS * FS_BLOCK_SIZE ))
+            # Grow if partition is more than 64 MiB larger than current FS
+            DIFF=$(( PART_BYTES - FS_BYTES ))
+            if [ "${DIFF}" -gt $(( 64 * 1024 * 1024 )) ]; then
+                log "Partition is larger than filesystem — growing (${DIFF} bytes)"
+                growpart /dev/mmcblk0 3 2>/dev/null || true
+                e2fsck -fy "${USERDATA_DEV}" 2>/dev/null || true
+                resize2fs "${USERDATA_DEV}"
+                log "Filesystem grown to fill partition"
+            fi
+        fi
+    fi
+fi
+
+# ── Step 3: mount temporarily to write sentinel + directories ─────────────────
+# rcS will mount /userdata properly after this script returns.
+# We use a tmpfs-backed bind here so we don't conflict with the real mount.
+TMP_MNT=$(mktemp -d)
+if mount -t ext4 "${USERDATA_DEV}" "${TMP_MNT}" -o noatime 2>/dev/null; then
+    if [ ! -f "${TMP_MNT}/.onikiri_initialized" ]; then
+        log "First boot — populating /userdata directory tree"
+        mkdir -p \
+            "${TMP_MNT}/hid" \
+            "${TMP_MNT}/modules" \
+            "${TMP_MNT}/config" \
+            "${TMP_MNT}/captures" \
+            "${TMP_MNT}/logs"
+        # Write sentinel so future boots and post-reflash boots skip this block
+        printf '%s\n' "$(date -u +%Y%m%dT%H%M%SZ)" > "${TMP_MNT}/.onikiri_initialized"
+        sync
+        log "Directory tree created; sentinel written"
+    else
+        log "Existing /userdata detected — skipping init (data preserved)"
+    fi
+    umount "${TMP_MNT}"
+else
+    log "WARNING: could not mount ${USERDATA_DEV} for init check"
+fi
+rmdir "${TMP_MNT}" 2>/dev/null || true

@@ -1,6 +1,6 @@
 # ⚠️ AI-Generated Content Notice
 
-**This project was created and maintained by a single developer with significant assistance from AI tools (including GitHub Copilot and GPT models). Please review all code and documentation carefully before use.**
+**This project was created and maintained by a single developer with significant assistance from AI tools (including GitHub Copilot powered by Anthropic Claude). Please review all code and documentation carefully before use.**
 
 # Onikiri Mk.I
 
