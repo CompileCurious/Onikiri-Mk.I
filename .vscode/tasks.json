@@ -4,7 +4,7 @@
     {
       "label": "git-push-ci-fixes",
       "type": "shell",
-      "command": "cd /workspaces/Onikiri-Mk.I && git add -A && git diff --cached --stat 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt && git commit -m 'feat: userdata persistence, boot-partition inbox, no-RTC naming, CI fix' 2>&1 | tee -a /workspaces/Onikiri-Mk.I/.vscode/new_job.txt && git push 2>&1 | tee -a /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",
+      "command": "( cd /workspaces/Onikiri-Mk.I && gh run list --repo CompileCurious/Onikiri-Mk.I --limit 5 && echo '---' && RUNID=$(gh run list --repo CompileCurious/Onikiri-Mk.I --limit 1 --json databaseId --jq '.[0].databaseId') && gh run view ${RUNID} --repo CompileCurious/Onikiri-Mk.I ) 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",
       "options": {
         "cwd": "/workspaces/Onikiri-Mk.I"
       },

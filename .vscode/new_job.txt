@@ -1,10 +1,23 @@
-22:# ── Require root (losetup, mount, mkfs need elevated privileges) ──────────────
-45:IMG_SIZE_MB=3072       # 3 GiB total image (for 4 GiB card minimum)
-57:log "Allocating ${IMG_SIZE_MB} MiB image: ${OUTPUT}"
-58:dd if=/dev/zero of="${OUTPUT}" bs=1M count="${IMG_SIZE_MB}" status=progress
-70:LOOP=$(losetup --find --show --partscan "${OUTPUT}")
-71:log "Loop device: ${LOOP}"
-76:    losetup -d "${LOOP}" 2>/dev/null || true
-80:BOOT_DEV="${LOOP}p1"
-81:ROOT_DEV="${LOOP}p2"
-82:DATA_DEV="${LOOP}p3"
+completed	success	fix: shorten FAT label ONIKIRI-BOOT->ONIKIRI-BOT (11 char max)	Build Onikiri Image	Default	push	26577582821	59s	2026-05-28T13:27:14Z
+completed	failure	feat: userdata persistence, boot-partition inbox, no-RTC naming, CI fix	Build Onikiri Image	Default	push	26577438325	48s	2026-05-28T13:24:32Z
+completed	failure	feat: implement userdata persistence model	Build Onikiri Image	Default	push	26576250465	1m4s	2026-05-28T13:00:44Z
+completed	success	added experimental HID injection and updated readme and docs	Build Onikiri Image	Default	push	26574279945	8m40s	2026-05-28T12:20:32Z
+completed	success	ci: chown image before xz (file owned by root after sudo mkimage.sh)	Build Onikiri Image	copilot/onikiri-mk-i-lw-pentesting-system	push	26470825589	8m16s	2026-05-26T19:38:48Z
+---
+
+✓ Default Build Onikiri Image CompileCurious/Onikiri-Mk.I#2 · 26577582821
+Triggered via push about 2 minutes ago
+
+JOBS
+✓ Cross-compile and package microSD image in 54s (ID 78301083614)
+
+ANNOTATIONS
+! Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/cache@v4, actions/checkout@v4, actions/upload-artifact@v4, softprops/action-gh-release@v2. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Cross-compile and package microSD image: .github#2
+
+
+ARTIFACTS
+onikiri-mkI-20260528-1327.img
+
+For more information about the job, try: gh run view --job=78301083614
+View this run on GitHub: https://github.com/CompileCurious/Onikiri-Mk.I/actions/runs/26577582821
