@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "git-push-ci-fixes",
+      "type": "shell",
+      "command": "gh run view --job=77943500338 --repo CompileCurious/Onikiri-Mk.I 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",
+      "options": {
+        "cwd": "/workspaces/Onikiri-Mk.I"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

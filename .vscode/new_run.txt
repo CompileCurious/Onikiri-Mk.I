@@ -1,0 +1,2 @@
+in_progress		ci: chown image before xz (file owned by root after sudo mkimage.sh)	Build Onikiri Image	copilot/onikiri-mk-i-lw-pentesting-system	push	26470825589	15s	2026-05-26T19:38:48Z
+completed	failure	ci: compress image with xz before release upload (GitHub 2 GiB asset …	Build Onikiri Image	copilot/onikiri-mk-i-lw-pentesting-system	push	26470410453	7m7s	2026-05-26T19:30:38Z

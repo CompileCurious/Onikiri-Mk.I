@@ -1,3 +1,7 @@
+# ⚠️ AI-Generated Content Notice
+
+**This documentation and much of the project were created with significant assistance from AI tools (including GitHub Copilot and GPT models), as this is a solo developer project. Please review carefully.**
+
 # Onikiri Mk.I — System Architecture
 
 ## Overview

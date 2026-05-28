@@ -1,0 +1,26 @@
+
+✓ copilot/onikiri-mk-i-lw-pentesting-system Build Onikiri Image CompileCurious/Onikiri-Mk.I#1 · 26470825589
+Triggered via push about 10 minutes ago
+
+✓ Cross-compile and package microSD image in 8m12s (ID 77943500338)
+  ✓ Set up job
+  ✓ Checkout repository
+  ✓ Set build date
+  ✓ Install build dependencies
+  ✓ Cache Linux kernel source
+  ✓ Build Onikiri image
+  ✓ Rename image with build stamp
+  ✓ Upload image artifact
+  ✓ Compress image for release
+  ✓ Create prerelease and upload image
+  ✓ Post Cache Linux kernel source
+  ✓ Post Checkout repository
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/cache@v4, actions/checkout@v4, actions/upload-artifact@v4, softprops/action-gh-release@v2. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Cross-compile and package microSD image: .github#2
+
+
+To see the full job log, try: gh run view --log --job=77943500338
+View this run on GitHub: https://github.com/CompileCurious/Onikiri-Mk.I/actions/runs/26470825589

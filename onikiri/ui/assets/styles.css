@@ -174,3 +174,366 @@ button.danger {
   0%, 100% { border-color: var(--line-strong); background: var(--panel); color: var(--text); }
   50% { border-color: var(--danger); background: #460000; color: #ffffff; }
 }
+
+/* ======================================================================
+   MITM VIEW
+====================================================================== */
+
+.hidden {
+  display: none !important;
+}
+
+.mitm-view {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.mitm-body {
+  display: grid;
+  grid-template-columns: 22rem 1fr;
+  gap: 1rem;
+  min-height: 0;
+}
+
+/* ---- Control panel ---- */
+
+.mitm-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border: 4px solid var(--line);
+  background: var(--panel);
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.control-status {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 3px solid var(--line);
+  font-size: 1.1rem;
+  letter-spacing: 0.15rem;
+}
+
+.status-dot {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 3px solid var(--line);
+  background: var(--panel);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot.active {
+  background: var(--line-strong);
+  border-color: var(--line-strong);
+}
+
+.control-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.control-action {
+  width: 100%;
+  padding: 0.9rem 0.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.1rem;
+}
+
+.control-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12rem;
+}
+
+.field-input {
+  background: var(--bg);
+  border: 2px solid var(--line);
+  color: var(--text);
+  padding: 0.5rem 0.6rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.05rem;
+  width: 100%;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+select {
+  background: var(--bg);
+  border: 2px solid var(--line);
+  color: var(--text);
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.05rem;
+  width: 100%;
+  appearance: none;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.control-secondary {
+  width: 100%;
+  border-color: var(--line);
+  font-size: 0.8rem;
+  padding: 0.6rem;
+  letter-spacing: 0.1rem;
+}
+
+/* ---- Rule list panel ---- */
+
+.mitm-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  border: 4px solid var(--line);
+  background: var(--panel);
+  padding: 1rem;
+  min-height: 0;
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 3px solid var(--line);
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  letter-spacing: 0.2rem;
+  font-weight: 700;
+}
+
+.rule-count {
+  color: var(--line-strong);
+  font-size: 0.85rem;
+  border: 2px solid var(--line);
+  padding: 0.1rem 0.4rem;
+  letter-spacing: 0.1rem;
+}
+
+.rules-header button {
+  margin-left: auto;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.1rem;
+  border-color: var(--line-strong);
+}
+
+/* ---- Scrollable rule list ---- */
+
+.rule-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-right: 0.3rem;
+}
+
+/* ---- Individual rule block ---- */
+
+.rule-block {
+  border: 2px solid var(--line);
+  background: var(--bg);
+  padding: 0.6rem 0.8rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem 0.6rem;
+  align-items: start;
+}
+
+.rule-block.disabled {
+  opacity: 0.45;
+}
+
+.rule-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.rule-name-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.1rem;
+  color: var(--text);
+}
+
+.rule-detail {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05rem;
+}
+
+.rule-kw-inline {
+  color: var(--line-strong);
+  font-weight: 700;
+  margin-right: 0.2rem;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.rule-actions button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-width: 2px;
+  letter-spacing: 0.05rem;
+  min-width: 2rem;
+}
+
+.rule-toggle-on {
+  border-color: var(--line-strong);
+  color: var(--line-strong);
+}
+
+.rule-toggle-off {
+  border-color: var(--line);
+  color: var(--text-dim);
+}
+
+/* ---- Rule editor ---- */
+
+.rule-editor {
+  flex-shrink: 0;
+  border: 3px solid var(--line-strong);
+  background: var(--bg);
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.editor-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.2rem;
+  font-weight: 700;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--line);
+}
+
+.editor-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rule-kw {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--line-strong);
+  letter-spacing: 0.1rem;
+  width: 3.5rem;
+  flex-shrink: 0;
+}
+
+.ed-select {
+  flex: 0 0 auto;
+  min-width: 9rem;
+  max-width: 12rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.ed-input {
+  flex: 1;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  color: var(--text);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.03rem;
+}
+
+.ed-input:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.editor-row button {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08rem;
+}
+
+.editor-error {
+  font-size: 0.78rem;
+  color: var(--line-strong);
+  letter-spacing: 0.05rem;
+  border: 2px solid var(--line-strong);
+  padding: 0.3rem 0.5rem;
+}
+
+/* =============================================================================
+   HID view — layout aliases (shares all .mitm-control / .mitm-rules styles)
+============================================================================= */
+
+.hid-view {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.hid-body {
+  display: grid;
+  grid-template-columns: 22rem 1fr;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.hid-sd-preview {
+  background: var(--bg);
+  border: 2px solid var(--line);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-family: monospace;
+  padding: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 10rem;
+  overflow-y: auto;
+  margin-top: 0.4rem;
+}
+
+.be-params {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.be-params textarea.ed-input {
+  height: 5rem;
+  font-family: monospace;
+  resize: vertical;
+}
+

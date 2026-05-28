@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="dashboard">
+    <!-- ================================================================
+         DASHBOARD VIEW
+    ================================================================ -->
+    <main id="dashboard-view" class="dashboard">
       <header class="topbar">
         <div>
           <h1>ONIKIRI MK.I</h1>
@@ -18,6 +21,204 @@
       <section id="panel-grid" class="panel-grid"></section>
     </main>
 
+    <!-- ================================================================
+         MITM EXPLOIT VIEW
+    ================================================================ -->
+    <main id="mitm-view" class="mitm-view hidden">
+      <header class="topbar">
+        <div>
+          <h1>MITM EXPLOIT</h1>
+          <p>HTTP(S) LAYER MANIPULATION</p>
+        </div>
+        <button id="mitm-back">◀ BACK</button>
+      </header>
+
+      <div class="mitm-body">
+        <!-- ---- Left: Control panel ---- -->
+        <section class="mitm-control">
+          <div class="control-status">
+            <span class="status-dot" id="mitm-dot"></span>
+            <span id="mitm-status-label">INACTIVE</span>
+          </div>
+
+          <div class="control-row">
+            <button id="mitm-start-btn" class="control-action">START EXPLOIT</button>
+            <button id="mitm-stop-btn" class="control-action danger">STOP EXPLOIT</button>
+          </div>
+
+          <div class="control-block">
+            <label class="field-label">ATTACK VECTOR</label>
+            <select id="mitm-vector"></select>
+          </div>
+
+          <div class="control-block">
+            <label class="field-label">INTERFACE</label>
+            <input type="text" id="mitm-iface" value="eth0" class="field-input" />
+          </div>
+
+          <div class="control-block">
+            <label class="field-label">GATEWAY IP</label>
+            <input type="text" id="mitm-gateway" placeholder="192.168.1.1" class="field-input" />
+          </div>
+
+          <div class="control-block">
+            <label class="field-label">TARGET IP</label>
+            <input type="text" id="mitm-target" placeholder="192.168.1.x" class="field-input" />
+          </div>
+
+          <div class="control-block">
+            <label class="field-label">PROXY PORT</label>
+            <input type="text" id="mitm-port" value="8080" class="field-input" />
+          </div>
+
+          <div class="control-block">
+            <button id="mitm-gen-ca" class="control-secondary">GENERATE FAKE CA</button>
+          </div>
+        </section>
+
+        <!-- ---- Right: Rule list ---- -->
+        <section class="mitm-rules">
+          <div class="rules-header">
+            <span class="section-title">RULES</span>
+            <span id="rule-count" class="rule-count">0</span>
+            <button id="add-rule-btn">+ ADD RULE</button>
+          </div>
+
+          <div id="rule-list" class="rule-list"></div>
+
+          <!-- Rule editor — shown inline when adding/editing -->
+          <div id="rule-editor" class="rule-editor hidden">
+            <div class="editor-title">RULE EDITOR</div>
+
+            <div class="editor-row">
+              <span class="rule-kw">IF</span>
+              <select id="ed-cond-type" class="ed-select"></select>
+              <select id="ed-cond-op" class="ed-select"></select>
+              <input id="ed-cond-value" class="ed-input" type="text" placeholder="VALUE" />
+            </div>
+
+            <!-- Secondary field for header name or substitute find/replace -->
+            <div id="ed-secondary-row" class="editor-row hidden">
+              <span class="rule-kw">ƒ</span>
+              <input id="ed-secondary-a" class="ed-input" type="text" placeholder="HEADER NAME / FIND" />
+              <input id="ed-secondary-b" class="ed-input" type="text" placeholder="REPLACE WITH" />
+            </div>
+
+            <div class="editor-row">
+              <span class="rule-kw">THEN</span>
+              <select id="ed-action-type" class="ed-select"></select>
+              <input id="ed-action-value" class="ed-input" type="text" placeholder="VALUE / TARGET" />
+            </div>
+
+            <div class="editor-row">
+              <span class="rule-kw">NAME</span>
+              <input id="ed-rule-name" class="ed-input" type="text" placeholder="RULE NAME" />
+              <button id="ed-save">SAVE</button>
+              <button id="ed-cancel">CANCEL</button>
+            </div>
+
+            <div id="ed-error" class="editor-error hidden"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ================================================================
+         HID BUILDER VIEW
+    ================================================================ -->
+    <main id="hid-view" class="hid-view hidden">
+      <header class="topbar">
+        <div>
+          <h1>HID BUILDER</h1>
+          <p>USB HID SCRIPT BUILDER</p>
+        </div>
+        <button id="hid-back">◀ BACK</button>
+      </header>
+
+      <div class="hid-body">
+        <!-- ---- Left: Control panel ---- -->
+        <section class="mitm-control">
+          <div class="control-status">
+            <span class="status-dot" id="hid-dot"></span>
+            <span id="hid-status-label">INACTIVE</span>
+          </div>
+
+          <div class="control-row">
+            <button id="hid-start-btn" class="control-action">RUN</button>
+            <button id="hid-stop-btn" class="control-action danger">STOP</button>
+          </div>
+
+          <div class="control-block">
+            <label class="field-label">DEVICE PROFILE</label>
+            <select id="hid-device-profile"></select>
+          </div>
+
+          <div class="control-block">
+            <label class="field-label">SEQUENCE NAME</label>
+            <input type="text" id="hid-seq-name" placeholder="default" class="field-input" />
+          </div>
+
+          <div class="control-block">
+            <button id="hid-setup-btn" class="control-secondary">SETUP USB GADGET</button>
+          </div>
+          <div class="control-block">
+            <button id="hid-teardown-btn" class="control-secondary danger">TEARDOWN GADGET</button>
+          </div>
+
+          <!-- SD card browser -->
+          <div class="control-block">
+            <span class="field-label">SD CARD PAYLOADS</span>
+            <select id="hid-sd-file" class="field-input" style="margin-top:0.35rem;"></select>
+            <div class="control-row" style="margin-top:0.5rem;">
+              <button id="hid-sd-preview-btn" class="control-secondary">PREVIEW</button>
+              <button id="hid-sd-import-btn" class="control-secondary">IMPORT</button>
+              <button id="hid-sd-run-btn" class="control-secondary danger">RUN RAW</button>
+            </div>
+          </div>
+          <div id="hid-sd-preview-box" class="hid-sd-preview hidden"></div>
+        </section>
+
+        <!-- ---- Right: Block list ---- -->
+        <section class="mitm-rules">
+          <div class="rules-header">
+            <span class="section-title">BLOCKS</span>
+            <span id="block-count" class="rule-count">0</span>
+            <button id="add-block-btn">+ ADD BLOCK</button>
+          </div>
+
+          <div id="block-list" class="rule-list"></div>
+
+          <!-- Block editor — shown inline when adding a block -->
+          <div id="block-editor" class="rule-editor hidden">
+            <div class="editor-title">BLOCK EDITOR</div>
+
+            <div class="editor-row">
+              <span class="rule-kw">CAT</span>
+              <select id="be-category" class="ed-select"></select>
+            </div>
+
+            <div class="editor-row">
+              <span class="rule-kw">TYPE</span>
+              <select id="be-type" class="ed-select"></select>
+            </div>
+
+            <!-- Dynamic param rows injected here by JS -->
+            <div id="be-params" class="be-params"></div>
+
+            <div class="editor-row">
+              <button id="be-save">SAVE</button>
+              <button id="be-cancel">CANCEL</button>
+            </div>
+
+            <div id="be-error" class="editor-error hidden"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ================================================================
+         SHARED OVERLAY (JSON detail)
+    ================================================================ -->
     <aside id="overlay" class="overlay hidden">
       <div class="overlay-card">
         <h2 id="overlay-title">MODULE</h2>

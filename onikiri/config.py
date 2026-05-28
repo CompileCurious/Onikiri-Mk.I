@@ -12,6 +12,10 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "overlay_paths": ["/overlay/data", "/data/engagements"],
     "public_mode": True,
     "allow_live_operations": False,
+    "mitm_rules_path": "/data/engagements/mitm-rules.json",
+    "mitm_ca_dir": "/data/engagements/ca",
+    "hid_sequence_path": "/data/engagements/hid-sequence.json",
+    "hid_payload_dir": "/mnt/sdcard/payloads",
     "ui": {
         "listen": "127.0.0.1",
         "port": 8171,

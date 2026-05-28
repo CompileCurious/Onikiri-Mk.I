@@ -1,0 +1,100 @@
+Cross-compile and package microSD image	UNKNOWN STEP	﻿2026-05-26T16:43:36.7505278Z Current runner version: '2.334.0'
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7531733Z ##[group]Runner Image Provisioner
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7532678Z Hosted Compute Agent
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7533282Z Version: 20260213.493
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7534003Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7534734Z Build Date: 2026-02-13T00:28:41Z
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7535451Z Worker ID: {8bdb2afa-e9e2-4c07-b466-91f7869b1159}
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7536240Z Azure Region: westus
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7537347Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7538978Z ##[group]Operating System
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7539665Z Ubuntu
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7540237Z 24.04.4
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7541247Z LTS
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7541794Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7542393Z ##[group]Runner Image
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7543020Z Image: ubuntu-24.04
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7543644Z Version: 20260518.149.1
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7544966Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260518.149/images/ubuntu/Ubuntu2404-Readme.md
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7546874Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260518.149
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7547950Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7549046Z ##[group]GITHUB_TOKEN Permissions
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7551381Z Contents: write
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7552020Z Metadata: read
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7552683Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7555092Z Secret source: Actions
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7555865Z Prepare workflow directory
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.7953360Z Prepare all required actions
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:36.8004322Z Getting action download info
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:37.4326906Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:37.6064240Z Download action repository 'actions/cache@v4' (SHA:0057852bfaa89a56745cba8c7296529d2fc39830)
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:37.7032762Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:37.8117245Z Download action repository 'softprops/action-gh-release@v2' (SHA:3bb12739c298aeb8a4eeaf626c5b8d85266b0e65)
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.2435133Z Complete job name: Cross-compile and package microSD image
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3260517Z ##[group]Run actions/checkout@v4
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3261521Z with:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3261996Z   fetch-depth: 0
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3262530Z   repository: CompileCurious/Onikiri-Mk.I
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3267398Z   token: ***
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3267891Z   ssh-strict: true
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3268366Z   ssh-user: git
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3268851Z   persist-credentials: true
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3269385Z   clean: true
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3269888Z   sparse-checkout-cone-mode: true
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3270472Z   fetch-tags: false
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3270967Z   show-progress: true
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3271471Z   lfs: false
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3271949Z   submodules: false
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3272463Z   set-safe-directory: true
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.3273353Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4426336Z Syncing repository: CompileCurious/Onikiri-Mk.I
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4428839Z ##[group]Getting Git version info
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4429765Z Working directory is '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I'
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4431008Z [command]/usr/bin/git version
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4511736Z git version 2.54.0
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4539961Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4563476Z Temporarily overriding HOME='/home/runner/work/_temp/5e154a39-026f-4fb4-8c54-c607ffa600d7' before making global git config changes
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4566020Z Adding repository directory to the temporary git global config as a safe directory
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4569210Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4616309Z Deleting the contents of '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I'
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4620569Z ##[group]Initializing the repository
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4624647Z [command]/usr/bin/git init /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4720065Z hint: Using 'master' as the name for the initial branch. This default branch name
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4722353Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4723617Z hint: to use in all of your new repositories, which will suppress this warning,
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4724584Z hint: call:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4725384Z hint:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4726563Z hint: 	git config --global init.defaultBranch <name>
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4727757Z hint:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4728844Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4730097Z hint: 'development'. The just-created branch can be renamed via this command:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4731247Z hint:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4732003Z hint: 	git branch -m <name>
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4732556Z hint:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4733288Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4734463Z Initialized empty Git repository in /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/.git/
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4738448Z [command]/usr/bin/git remote add origin https://github.com/CompileCurious/Onikiri-Mk.I
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4783215Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4784142Z ##[group]Disabling automatic garbage collection
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4787443Z [command]/usr/bin/git config --local gc.auto 0
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4819132Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4819966Z ##[group]Setting up auth
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4827991Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.4865350Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5219700Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5251719Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5479860Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5514357Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5744760Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5781219Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5782903Z ##[group]Fetching the repository
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:38.5792084Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2450990Z From https://github.com/CompileCurious/Onikiri-Mk.I
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2452299Z  * [new branch]      Default    -> origin/Default
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2453842Z  * [new branch]      copilot/onikiri-mk-i-lw-pentesting-system -> origin/copilot/onikiri-mk-i-lw-pentesting-system
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2501563Z [command]/usr/bin/git branch --list --remote origin/copilot/onikiri-mk-i-lw-pentesting-system
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2527462Z   origin/copilot/onikiri-mk-i-lw-pentesting-system
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2535613Z [command]/usr/bin/git rev-parse refs/remotes/origin/copilot/onikiri-mk-i-lw-pentesting-system
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2557076Z 74708d1b0fee561b55e2a2e7355f915e1dfdf370
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2562472Z ##[endgroup]
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:43:39.2563895Z ##[group]Determining the checkout info

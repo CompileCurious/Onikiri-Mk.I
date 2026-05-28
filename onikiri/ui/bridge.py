@@ -43,6 +43,42 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             }
             self.respond(payload)
             return
+        if parsed.path == "/api/mitm/state":
+            status = self.state.request("mitm_status")
+            rules_resp = self.state.request("mitm_list_rules")
+            vectors_resp = self.state.request("mitm_list_vectors")
+            payload = {
+                "status": status.get("status", "inactive"),
+                "running": status.get("running", False),
+                "active_params": status.get("active_params", {}),
+                "tools": status.get("tools", {}),
+                "rules": rules_resp.get("rules", []),
+                "schema": rules_resp.get("schema", {}),
+                "vectors": vectors_resp.get("vectors", []),
+            }
+            self.respond(payload)
+            return
+        if parsed.path == "/api/hid/state":
+            status = self.state.request("hid_status")
+            blocks_resp = self.state.request("hid_list_blocks")
+            devices_resp = self.state.request("hid_list_devices")
+            payload = {
+                "status": status.get("status", "inactive"),
+                "running": status.get("running", False),
+                "device_profile": status.get("device_profile", "generic_keyboard"),
+                "sequence_name": status.get("sequence_name", "default"),
+                "kbd_present": status.get("kbd_present", False),
+                "blocks": blocks_resp.get("blocks", []),
+                "meta": blocks_resp.get("meta", {}),
+                "schema": blocks_resp.get("schema", {}),
+                "devices": devices_resp.get("devices", {}),
+            }
+            self.respond(payload)
+            return
+        if parsed.path == "/api/hid/sd/list":
+            response = self.state.request("hid_sd_list")
+            self.respond(response)
+            return
         if parsed.path == "/":
             self.path = "/index.html"
         super().do_GET()
@@ -63,6 +99,109 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/wipe":
             response = self.state.request("wipe_engagement_data")
+            self.respond(response)
+            return
+        # ------------------------------------------------------------------
+        # MITM rule-engine and control endpoints
+        # ------------------------------------------------------------------
+        if parsed.path == "/api/mitm/rules/add":
+            response = self.state.request("mitm_add_rule", rule=payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/rules/remove":
+            response = self.state.request("mitm_remove_rule", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/rules/toggle":
+            response = self.state.request("mitm_toggle_rule", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/rules/reorder":
+            response = self.state.request("mitm_reorder_rules", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/rules/move_up":
+            response = self.state.request("mitm_move_rule_up", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/rules/move_down":
+            response = self.state.request("mitm_move_rule_down", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/rules/test":
+            response = self.state.request("mitm_test_rule", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/start":
+            response = self.state.request("mitm_start", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/stop":
+            response = self.state.request("mitm_stop")
+            self.respond(response)
+            return
+        if parsed.path == "/api/mitm/generate_ca":
+            response = self.state.request("mitm_generate_ca", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/blocks/add":
+            response = self.state.request("hid_add_block", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/blocks/remove":
+            response = self.state.request("hid_remove_block", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/blocks/toggle":
+            response = self.state.request("hid_toggle_block", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/blocks/reorder":
+            response = self.state.request("hid_reorder_blocks", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/blocks/move_up":
+            response = self.state.request("hid_move_block_up", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/blocks/move_down":
+            response = self.state.request("hid_move_block_down", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/device/set":
+            response = self.state.request("hid_set_device", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/setup_gadget":
+            response = self.state.request("hid_setup_gadget", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/teardown_gadget":
+            response = self.state.request("hid_teardown_gadget", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/start":
+            response = self.state.request("hid_start", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/stop":
+            response = self.state.request("hid_stop", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/sd/preview":
+            response = self.state.request("hid_sd_preview", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/sd/import":
+            response = self.state.request("hid_sd_import", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/sd/run_raw":
+            response = self.state.request("hid_sd_run_raw", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/hid/export":
+            response = self.state.request("hid_export", **payload)
             self.respond(response)
             return
         self.send_error(HTTPStatus.NOT_FOUND, "unknown endpoint")

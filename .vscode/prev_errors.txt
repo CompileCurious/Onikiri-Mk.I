@@ -1,0 +1,27 @@
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:44:57.7971079Z   HOSTCC  scripts/dtc/libfdt/fdt_strerror.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:44:57.7985244Z   HOSTCC  scripts/dtc/libfdt/fdt_ro.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:44:57.8150890Z   HOSTCC  scripts/dtc/libfdt/fdt_rw.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:44:57.8394967Z   HOSTCC  scripts/dtc/libfdt/fdt_empty_tree.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:44:57.8667822Z   HOSTCC  scripts/dtc/libfdt/fdt_addresses.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:44:57.8803725Z   HOSTCC  scripts/dtc/checks.o
+--
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:11.8567516Z   CC      lib/zstd/common/error_private.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:11.9527398Z   CC      drivers/pinctrl/sunxi/pinctrl-sun50i-h6-r.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:12.3087465Z   CC      lib/zstd/common/fse_decompress.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:12.3887840Z   CC      lib/zstd/common/zstd_common.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:12.3908299Z   CC      drivers/pinctrl/sunxi/pinctrl-sun50i-h616.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:12.3957171Z   AR      lib/zstd/built-in.a
+--
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:17.9290327Z   CC      lib/fdt_strerror.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:18.0007482Z   CC      net/core/skbuff.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:18.1465711Z   CC      lib/fdt_sw.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:18.2454400Z   CC      lib/fdt_wip.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:18.2498242Z   CC      drivers/gpio/gpiolib.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:47:18.6207633Z   CC      lib/flex_proportions.o
+--
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.2439645Z ##[error]Process completed with exit code 128.
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.2586978Z Post job cleanup.
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3609585Z [command]/usr/bin/git version
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3648874Z git version 2.54.0
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3697549Z Temporarily overriding HOME='/home/runner/work/_temp/c59208a0-358a-42b7-bbde-741170ba5373' before making global git config changes
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3698926Z Adding repository directory to the temporary git global config as a safe directory

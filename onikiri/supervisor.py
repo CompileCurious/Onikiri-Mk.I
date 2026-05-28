@@ -85,6 +85,41 @@ class Supervisor:
         if action == "wipe_engagement_data":
             removed = self.wipe_engagement_data()
             return {"status": "completed", "removed": removed}
+        # ------------------------------------------------------------------
+        # MITM direct actions — respond immediately without job queuing
+        # so the UI can read/write rules without polling for job completion.
+        # ------------------------------------------------------------------
+        if action in (
+            "mitm_list_rules",
+            "mitm_add_rule",
+            "mitm_remove_rule",
+            "mitm_toggle_rule",
+            "mitm_reorder_rules",
+            "mitm_move_rule_up",
+            "mitm_move_rule_down",
+            "mitm_test_rule",
+            "mitm_status",
+            "mitm_list_vectors",
+            "mitm_start",
+            "mitm_stop",
+            "mitm_generate_ca",
+        ):
+            mitm = self.modules.get("mitm")
+            if mitm is None:
+                return {"status": "error", "error": "mitm module not loaded"}
+            module_action = action[len("mitm_"):]  # strip "mitm_" prefix
+            params = {k: v for k, v in request.items() if k != "action"}
+            return await mitm.execute(module_action, params, self.context)
+        # ------------------------------------------------------------------
+        # HID direct actions — same pattern as MITM
+        # ------------------------------------------------------------------
+        if action.startswith("hid_"):
+            hid = self.modules.get("hid_gadget")
+            if hid is None:
+                return {"status": "error", "error": "hid_gadget module not loaded"}
+            module_action = action[len("hid_"):]  # strip "hid_" prefix
+            params = {k: v for k, v in request.items() if k != "action"}
+            return await hid.execute(module_action, params, self.context)
         raise KeyError(f"unsupported action: {action}")
 
     def wipe_engagement_data(self) -> list[str]:

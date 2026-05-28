@@ -1,0 +1,3 @@
+in_progress		fix: move sudo elevation before arg parsing in mkimage.sh	Build Onikiri Image	copilot/onikiri-mk-i-lw-pentesting-system	push	26469944229	20s	2026-05-26T19:21:24Z
+completed	failure	fix: resolve CI build failures (losetup root, RTL8821CS modules, miss…	Build Onikiri Image	copilot/onikiri-mk-i-lw-pentesting-system	push	26469383016	7m15s	2026-05-26T19:10:02Z
+completed	failure	build: Fix Wi-Fi driver clone in CI environment	Build Onikiri Image	copilot/onikiri-mk-i-lw-pentesting-system	push	26461973816	8m3s	2026-05-26T16:43:31Z

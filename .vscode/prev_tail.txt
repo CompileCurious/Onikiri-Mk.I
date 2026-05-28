@@ -1,0 +1,100 @@
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:17.9707368Z   CC      drivers/firmware/efi/esrt.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:18.0162272Z   CC      drivers/hid/hid-cherry.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:18.2367653Z   CC      drivers/of/property.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:18.6357371Z   CC      drivers/of/kobj.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:18.6613484Z   CC      drivers/firmware/efi/runtime-wrappers.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:18.7527374Z   CC      drivers/hid/hid-chicony.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:19.2787407Z   CC      drivers/firmware/efi/efi-init.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:19.3953426Z   CC      drivers/hid/hid-cypress.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:19.6507454Z   CC      drivers/of/fdt.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:19.6703200Z   CC      net/mac80211/mlme.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:19.8937692Z   CC      drivers/firmware/efi/arm-runtime.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:20.0247801Z   CC      drivers/hid/hid-ezkey.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:20.0667672Z   CC      drivers/of/fdt_address.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:20.5317606Z   CC      drivers/firmware/efi/earlycon.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:20.5407457Z   AR      drivers/firmware/efi/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:20.5507278Z   AR      drivers/firmware/xilinx/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:20.6867640Z   CC      drivers/hid/hid-ite.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:20.9854885Z   CC      drivers/of/address.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:21.3006332Z   CC      net/mac80211/tdls.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:21.3169706Z   CC      drivers/hid/hid-kensington.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:21.5228546Z   CC      drivers/firmware/dmi_scan.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:21.7317693Z   CC      drivers/of/irq.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:21.9981330Z   CC      drivers/firmware/dmi-id.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.0078469Z   AR      drivers/firmware/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.0239700Z   AR      drivers/platform/surface/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.0327483Z   AR      drivers/platform/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.1257495Z   CC      drivers/hid/hid-microsoft.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.3237514Z   CC      net/mac80211/ocb.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.3951606Z   CC      drivers/of/of_reserved_mem.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.4031525Z   AR      drivers/of/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.4140768Z   AR      drivers/hwtracing/intel_th/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.7767649Z   CC      drivers/hid/hid-monterey.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:22.8537531Z   CC      drivers/extcon/devres.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.2166764Z   CC      drivers/extcon/extcon.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.2233225Z   AR      drivers/extcon/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.2329737Z   AR      drivers/android/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.3748324Z   CC      drivers/hid/hid-redragon.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.3847356Z   AR      drivers/hid/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.4347633Z   AR      drivers/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.6984787Z   CC      net/mac80211/airtime.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:23.7338952Z   CC      net/mac80211/eht.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:24.8437526Z   CC      net/mac80211/mesh.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:24.9990617Z   CC      net/mac80211/mesh_plink.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:25.0317486Z   CC      net/mac80211/mesh_pathtbl.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:25.0815761Z   CC      net/mac80211/mesh_hwmp.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:25.8091950Z   CC      net/mac80211/mesh_sync.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:25.9897164Z   CC      net/mac80211/pm.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:26.0055580Z   CC      net/mac80211/mesh_ps.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:26.4815093Z   CC      net/mac80211/rc80211_minstrel_ht.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:26.4892317Z   AR      net/mac80211/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:26.5138029Z   AR      net/built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:26.5942707Z   AR      built-in.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:26.7375348Z   AR      vmlinux.a
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.0550881Z   LD      vmlinux.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.0804343Z   OBJCOPY modules.builtin.modinfo
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.0964890Z   GEN     modules.builtin
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.1953592Z   MODPOST vmlinux.symvers
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.2297269Z   UPD     include/generated/utsversion.h
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.3772432Z   CC      init/version-timestamp.o
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.3798208Z   LD      .tmp_vmlinux.kallsyms1
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.7395055Z   NM      .tmp_vmlinux.kallsyms1.syms
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:27.8650085Z   KSYMS   .tmp_vmlinux.kallsyms1.S
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:28.0266299Z   AS      .tmp_vmlinux.kallsyms1.S
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:28.1790845Z   LD      .tmp_vmlinux.kallsyms2
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:28.5432374Z   NM      .tmp_vmlinux.kallsyms2.syms
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:28.6847364Z   KSYMS   .tmp_vmlinux.kallsyms2.S
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:28.8526759Z   AS      .tmp_vmlinux.kallsyms2.S
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:29.0107555Z   LD      vmlinux
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:29.3800802Z   NM      System.map
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:29.5180284Z   SORTTAB vmlinux
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:29.5513762Z   OBJCOPY arch/arm64/boot/Image
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:29.5540172Z make: Entering directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:29.9798109Z make: Leaving directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:29.9815627Z make: Entering directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0075909Z   INSTALL /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/rootfs_stage/lib/modules/6.6.30-dirty/modules.builtin
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0096728Z   INSTALL /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/rootfs_stage/lib/modules/6.6.30-dirty/modules.builtin.modinfo
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0114415Z make: Leaving directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0117093Z [build] Kernel build complete
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0117845Z [build]   Image: /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux/arch/arm64/boot/Image
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0119140Z [build]   DTB:   /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0120251Z [build] Building RTL8821CS out-of-tree driver
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.0132397Z Cloning into '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/rtl8821cs'...
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.2392819Z fatal: could not read Username for 'https://github.com': terminal prompts disabled
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.2439645Z ##[error]Process completed with exit code 128.
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.2586978Z Post job cleanup.
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3609585Z [command]/usr/bin/git version
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3648874Z git version 2.54.0
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3697549Z Temporarily overriding HOME='/home/runner/work/_temp/c59208a0-358a-42b7-bbde-741170ba5373' before making global git config changes
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3698926Z Adding repository directory to the temporary git global config as a safe directory
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3713293Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3753474Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.3790571Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.4024562Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.4051272Z http.https://github.com/.extraheader
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.4063654Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.4095797Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.4347726Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.4385257Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.4876889Z Cleaning up orphan processes
+Cross-compile and package microSD image	UNKNOWN STEP	2026-05-26T16:51:30.5239155Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/cache@v4, actions/checkout@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,10 @@
+Cross-compile and package microSD image	Compress image for release	﻿2026-05-26T19:37:23.5227772Z ##[group]Run xz -T0 -9 -k "${IMAGE_PATH}"
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:23.5228051Z [36;1mxz -T0 -9 -k "${IMAGE_PATH}"[0m
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:23.5228326Z [36;1mecho "COMPRESSED_IMAGE_PATH=${IMAGE_PATH}.xz" >> "$GITHUB_ENV"[0m
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:23.5259343Z shell: /usr/bin/bash -e {0}
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:23.5259552Z env:
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:23.5259727Z   IMAGE_PATH: out/onikiri-mkI-20260526-1930.img
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:23.5259956Z ##[endgroup]
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:23.5389922Z xz: Reduced the number of threads from 4 to 3 to not exceed the memory usage limit of 3999 MiB
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:42.6637743Z xz: out/onikiri-mkI-20260526-1930.img.xz: Cannot set the file group: Operation not permitted
+Cross-compile and package microSD image	Compress image for release	2026-05-26T19:37:42.6752613Z ##[error]Process completed with exit code 2.

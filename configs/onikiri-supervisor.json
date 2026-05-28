@@ -8,6 +8,10 @@
   ],
   "public_mode": true,
   "allow_live_operations": false,
+  "mitm_rules_path": "/data/engagements/mitm-rules.json",
+  "mitm_ca_dir": "/data/engagements/ca",
+  "hid_sequence_path": "/data/engagements/hid-sequence.json",
+  "hid_payload_dir": "/mnt/sdcard/payloads",
   "ui": {
     "listen": "127.0.0.1",
     "port": 8171,
@@ -28,3 +32,4 @@
     "system_info"
   ]
 }
+

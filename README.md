@@ -1,3 +1,7 @@
+# ⚠️ AI-Generated Content Notice
+
+**This project was created and maintained by a single developer with significant assistance from AI tools (including GitHub Copilot and GPT models). Please review all code and documentation carefully before use.**
+
 # Onikiri Mk.I
 
 Minimal, fast-boot Linux pentesting platform for the BigTreeTech Pad 7 (CB1 / Allwinner H616).

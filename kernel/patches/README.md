@@ -1,3 +1,7 @@
+# ⚠️ AI-Generated Content Notice
+
+**This documentation and much of the project were created with significant assistance from AI tools (including GitHub Copilot and GPT models), as this is a solo developer project. Please review carefully.**
+
 # H616 Hardware Support Patches
 
 Patches from Armbian sunxi-6.12 tree, adapted for Linux 6.6.30.  

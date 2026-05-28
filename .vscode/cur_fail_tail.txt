@@ -1,0 +1,200 @@
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:49.9992769Z   CC      drivers/firmware/efi/libstub/randomalloc.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.0182408Z   CC      drivers/firmware/smccc/soc_id.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.0242123Z   AR      drivers/firmware/smccc/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.0612312Z   CC      net/mac80211/fils_aead.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.3292300Z   CC      net/rfkill/core.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.4156606Z   CC      drivers/clocksource/timer-of.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.5372646Z   CC      drivers/firmware/efi/libstub/pci.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.5772296Z   CC      drivers/firmware/efi/libstub/skip_spaces.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.7232683Z   CC      drivers/firmware/efi/libstub/lib-cmdline.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.7482201Z   CC      drivers/firmware/efi/libstub/lib-ctype.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.7974085Z   CC      net/rfkill/input.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:50.8262424Z   CC      drivers/clocksource/timer-probe.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:51.1832452Z   CC      drivers/clocksource/mmio.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:51.2048223Z   CC      net/rfkill/rfkill-gpio.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:51.2118189Z   AR      net/rfkill/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:51.2293469Z   CC      drivers/firmware/efi/libstub/alignedmem.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:51.5902563Z   CC      drivers/clocksource/timer-sun4i.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:51.7152478Z   CC      drivers/firmware/efi/libstub/relocate.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:51.8156468Z   CC      net/devres.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:52.2192641Z   CC      drivers/firmware/efi/libstub/printk.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:52.2264741Z   CC      drivers/firmware/efi/reboot.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:52.4853938Z   CC      drivers/clocksource/arm_arch_timer.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:52.4952716Z   CC      drivers/firmware/efi/libstub/vsprintf.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:52.6032577Z   CC      net/mac80211/cfg.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:52.8833233Z   CC      drivers/clocksource/dummy_timer.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:52.8932134Z   AR      drivers/clocksource/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.0420482Z   CC      drivers/firmware/efi/libstub/fdt.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.2506722Z   CC      drivers/firmware/efi/libstub/lib-fdt_rw.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.4582785Z   CC      drivers/hid/usbhid/hid-core.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.4733312Z   CC      net/mac80211/ethtool.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.5312801Z   CC      drivers/firmware/efi/libstub/lib-fdt_ro.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.6032848Z   CC      drivers/firmware/efi/libstub/lib-fdt_wip.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.7482528Z   CC      drivers/firmware/efi/libstub/lib-fdt.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.7972777Z   CC      drivers/firmware/efi/libstub/lib-fdt_empty_tree.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:53.9533318Z   CC      drivers/firmware/efi/libstub/lib-fdt_sw.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:54.4362660Z   CC      drivers/hid/usbhid/hiddev.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:54.4422318Z   AR      drivers/hid/usbhid/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:54.4611907Z   CC      drivers/firmware/efi/libstub/efi-stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:54.5972512Z   CC      drivers/firmware/efi/libstub/string.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:54.6752419Z   CC      net/socket.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:55.0722520Z   CC      drivers/firmware/efi/libstub/intrinsics.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:55.5342455Z   CC      drivers/firmware/dmi_scan.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:55.5621128Z   CC      drivers/firmware/efi/libstub/systable.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:55.8802467Z   CC      drivers/hid/hid-core.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:56.0293731Z   CC      drivers/firmware/efi/memattr.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:56.0555012Z   CC      drivers/firmware/efi/libstub/screen_info.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:56.4022734Z   CC      net/mac80211/rx.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:56.5402522Z   CC      drivers/firmware/efi/libstub/efi-stub-entry.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:56.5826616Z   CC      drivers/firmware/efi/tpm.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:57.0372659Z   CC      drivers/firmware/efi/libstub/kaslr.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:57.1732593Z   CC      net/mac80211/spectmgmt.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:57.3482581Z   CC      drivers/hid/hid-input.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:57.5252577Z   CC      drivers/firmware/efi/libstub/arm64.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:57.9139510Z   CC      net/sysctl_net.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:57.9505189Z   CC      drivers/hid/hid-quirks.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.0074031Z   CC      drivers/firmware/efi/libstub/arm64-stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.3374483Z   CC      drivers/firmware/dmi-id.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.4841021Z   CC      drivers/hid/hid-generic.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.4972405Z   STUBCPY drivers/firmware/efi/libstub/alignedmem.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5159329Z   CC      drivers/firmware/efi/libstub/smbios.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5292449Z   STUBCPY drivers/firmware/efi/libstub/arm64-stub.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5382152Z   STUBCPY drivers/firmware/efi/libstub/arm64.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5472185Z   STUBCPY drivers/firmware/efi/libstub/efi-stub-entry.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5592236Z   STUBCPY drivers/firmware/efi/libstub/efi-stub-helper.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5682213Z   STUBCPY drivers/firmware/efi/libstub/efi-stub.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5782115Z   STUBCPY drivers/firmware/efi/libstub/fdt.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5882287Z   STUBCPY drivers/firmware/efi/libstub/file.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.5982176Z   STUBCPY drivers/firmware/efi/libstub/gop.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6072192Z   STUBCPY drivers/firmware/efi/libstub/intrinsics.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6172175Z   STUBCPY drivers/firmware/efi/libstub/kaslr.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6282212Z   STUBCPY drivers/firmware/efi/libstub/lib-cmdline.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6372260Z   STUBCPY drivers/firmware/efi/libstub/lib-ctype.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6472188Z   STUBCPY drivers/firmware/efi/libstub/lib-fdt.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6582235Z   STUBCPY drivers/firmware/efi/libstub/lib-fdt_empty_tree.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6672198Z   STUBCPY drivers/firmware/efi/libstub/lib-fdt_ro.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6772160Z   STUBCPY drivers/firmware/efi/libstub/lib-fdt_rw.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6882234Z   STUBCPY drivers/firmware/efi/libstub/lib-fdt_sw.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.6972244Z   STUBCPY drivers/firmware/efi/libstub/lib-fdt_wip.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7072162Z   STUBCPY drivers/firmware/efi/libstub/mem.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7182170Z   STUBCPY drivers/firmware/efi/libstub/pci.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7272151Z   STUBCPY drivers/firmware/efi/libstub/printk.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7372153Z   STUBCPY drivers/firmware/efi/libstub/random.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7462117Z   STUBCPY drivers/firmware/efi/libstub/randomalloc.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7572277Z   STUBCPY drivers/firmware/efi/libstub/relocate.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7662257Z   STUBCPY drivers/firmware/efi/libstub/screen_info.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7762253Z   STUBCPY drivers/firmware/efi/libstub/secureboot.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7872262Z   STUBCPY drivers/firmware/efi/libstub/skip_spaces.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.7962170Z   STUBCPY drivers/firmware/efi/libstub/smbios.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.8082175Z   STUBCPY drivers/firmware/efi/libstub/string.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.8172191Z   STUBCPY drivers/firmware/efi/libstub/systable.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.8262279Z   STUBCPY drivers/firmware/efi/libstub/tpm.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.8382298Z   STUBCPY drivers/firmware/efi/libstub/vsprintf.stub.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.8922462Z   CC      drivers/hid/hid-a4tech.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:58.9132417Z   AR      drivers/firmware/efi/libstub/lib.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:59.4102418Z   CC      drivers/firmware/efi/memmap.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:59.4372651Z   CC      drivers/hid/hid-belkin.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:59.8274859Z   CC      net/mac80211/key.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:59.8500423Z   CC      drivers/firmware/efi/fdtparams.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:16:59.9822445Z   CC      drivers/hid/hid-cherry.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:00.0227361Z   CC      net/mac80211/tx.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:00.3952811Z   CC      drivers/firmware/efi/esrt.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:00.6412510Z   CC      drivers/hid/hid-chicony.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:00.8916039Z   CC      drivers/of/base.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:00.9972529Z   CC      drivers/firmware/efi/runtime-wrappers.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:01.2011440Z   CC      drivers/hid/hid-cypress.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:01.3396110Z   CC      drivers/of/cpu.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:01.5380656Z   CC      drivers/firmware/efi/efi-init.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:01.7342707Z   CC      drivers/hid/hid-ezkey.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:01.8492298Z   CC      drivers/of/device.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.0922503Z   CC      drivers/firmware/efi/arm-runtime.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.2119146Z   CC      drivers/of/module.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.2932641Z   CC      drivers/hid/hid-ite.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.6642680Z   CC      drivers/firmware/efi/earlycon.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.6732258Z   AR      drivers/firmware/efi/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.6812104Z   AR      drivers/firmware/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.6972687Z   AR      drivers/platform/surface/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.7032185Z   AR      drivers/platform/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.8222586Z   CC      drivers/hid/hid-kensington.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.9052744Z   CC      drivers/of/platform.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:02.9842421Z   CC      net/mac80211/util.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:03.4962613Z   CC      drivers/hid/hid-microsoft.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:03.6222601Z   CC      net/mac80211/wme.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:03.8882755Z   CC      drivers/of/property.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.0512677Z   CC      drivers/hid/hid-monterey.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.2492535Z   CC      drivers/of/kobj.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.4239789Z   CC      net/mac80211/chan.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.4420853Z   CC      drivers/extcon/extcon.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.5942652Z   CC      drivers/hid/hid-redragon.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.6032267Z   AR      drivers/hid/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.6122060Z   AR      drivers/hwtracing/intel_th/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.8349905Z   CC      drivers/extcon/devres.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.8432065Z   AR      drivers/extcon/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.8522045Z   AR      drivers/android/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:04.9742463Z   CC      drivers/of/fdt_address.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:05.1369160Z   CC      drivers/of/fdt.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:05.2032567Z   CC      net/mac80211/trace.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:05.7704898Z   CC      drivers/of/of_reserved_mem.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:05.7717535Z   CC      drivers/of/irq.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:05.7863142Z   CC      drivers/of/address.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:05.7942166Z   AR      drivers/of/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:05.8512258Z   AR      drivers/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:06.6222434Z   CC      net/mac80211/ocb.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:07.2279495Z   CC      net/mac80211/tdls.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:07.2606718Z   CC      net/mac80211/airtime.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:07.3605534Z   CC      net/mac80211/eht.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:08.5052588Z   CC      net/mac80211/mesh_plink.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:08.6112646Z   CC      net/mac80211/mlme.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:08.6532477Z   CC      net/mac80211/mesh.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:08.6952525Z   CC      net/mac80211/mesh_pathtbl.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:09.4382607Z   CC      net/mac80211/mesh_sync.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:09.5365694Z   CC      net/mac80211/pm.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:09.5483854Z   CC      net/mac80211/mesh_ps.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:09.6158124Z   CC      net/mac80211/mesh_hwmp.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:10.4922410Z   CC      net/mac80211/rc80211_minstrel_ht.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:10.5002651Z   AR      net/mac80211/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:10.5277003Z   AR      net/built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:10.6183413Z   AR      built-in.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:10.7746244Z   AR      vmlinux.a
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.1240186Z   LD      vmlinux.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.1484783Z   OBJCOPY modules.builtin.modinfo
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.1527490Z   GEN     modules.builtin
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.2482587Z   MODPOST vmlinux.symvers
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.2815357Z   UPD     include/generated/utsversion.h
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.4094522Z   CC      init/version-timestamp.o
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.4120737Z   LD      .tmp_vmlinux.kallsyms1
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.7965597Z   NM      .tmp_vmlinux.kallsyms1.syms
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:11.9291012Z   KSYMS   .tmp_vmlinux.kallsyms1.S
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:12.1114069Z   AS      .tmp_vmlinux.kallsyms1.S
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:12.2548719Z   LD      .tmp_vmlinux.kallsyms2
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:12.6400014Z   NM      .tmp_vmlinux.kallsyms2.syms
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:12.7973000Z   KSYMS   .tmp_vmlinux.kallsyms2.S
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:12.9770713Z   AS      .tmp_vmlinux.kallsyms2.S
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:13.1252851Z   LD      vmlinux
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:13.5127910Z   NM      System.map
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:13.6688241Z   SORTTAB vmlinux
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:13.6994207Z   OBJCOPY arch/arm64/boot/Image
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:13.7022370Z make: Entering directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1023019Z make: Leaving directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1040583Z make: Entering directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1305698Z   INSTALL /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/rootfs_stage/lib/modules/6.6.30-dirty/modules.builtin
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1326897Z   INSTALL /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/rootfs_stage/lib/modules/6.6.30-dirty/modules.builtin.modinfo
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1344361Z make: Leaving directory '/home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux'
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1346526Z [build] Kernel build complete
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1347038Z [build]   Image: /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux/arch/arm64/boot/Image
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1347706Z [build]   DTB:   /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/linux/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1363879Z [build] Skipping RTL8821CS out-of-tree driver (CONFIG_MODULES is not set)
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.1364290Z [build] Assembling root filesystem
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.5332016Z [build]   [NOTE] Python3 ARM64 binary must be installed from your sysroot.
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.5332947Z [build]          See build/packages.list for required packages.
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.5523540Z [build] Root filesystem assembled at /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/rootfs_stage
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.5524346Z [build] Building SquashFS image
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.7761966Z Number of ids (unique uids + gids) 1
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.7762477Z Number of uids 1
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.7762676Z 	runner (1001)
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.7762873Z Number of gids 1
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.7763057Z 	runner (1001)
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.8084137Z [build] SquashFS: 48K
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.8084880Z [build] Building microSD image: /home/runner/work/Onikiri-Mk.I/Onikiri-Mk.I/out/onikiri-mkI-20260526.img
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.8232806Z Missing --kernel
+Cross-compile and package microSD image	Build Onikiri image	2026-05-26T19:17:14.8259822Z ##[error]Process completed with exit code 1.
