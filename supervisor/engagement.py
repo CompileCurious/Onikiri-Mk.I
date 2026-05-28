@@ -4,6 +4,14 @@ Loads, persists, and wipes engagement profiles.
 
 An engagement profile is a JSON file stored in /userdata/captures/engagements/<name>.json.
 It stores target scope, network credentials, active modules, and notes.
+
+No-RTC naming
+─────────────
+The device has no real-time clock so wall-clock timestamps cannot be used for
+file naming.  Engagements are numbered with a monotonic counter stored at
+/userdata/.seq_counter.  Counter values are never reused (the counter only ever
+increments) so names like "eng-00003" are globally unique across reflashes as
+long as /userdata is preserved.
 """
 
 from __future__ import annotations
@@ -25,7 +33,43 @@ class EngagementManager:
         self._dir = base_dir
         self.current_profile: dict | None = None
 
+    # ── No-RTC sequential counter ─────────────────────────────────────────────
+
+    def _next_seq(self) -> int:
+        """Increment and return a monotonic counter from /userdata/.seq_counter.
+
+        Safe without an RTC: the counter file lives on the persistent /userdata
+        partition so values survive reboots and reflashes (as long as p3 is kept).
+        Counter starts at 1 and only ever increases.
+        """
+        counter_file = self._dir.parent / ".seq_counter"
+        try:
+            current = int(counter_file.read_text().strip())
+        except (FileNotFoundError, ValueError):
+            current = 0
+        next_val = current + 1
+        counter_file.parent.mkdir(parents=True, exist_ok=True)
+        counter_file.write_text(str(next_val))
+        return next_val
+
     # ── Public API ────────────────────────────────────────────────────────────
+
+    def list_profiles(self) -> dict:
+        """Return all saved engagement names from /userdata/captures/engagements/."""
+        self._dir.mkdir(parents=True, exist_ok=True)
+        profiles = sorted(p.stem for p in self._dir.glob("*.json"))
+        current_name = self.current_profile["name"] if self.current_profile else None
+        return {"profiles": profiles, "current": current_name}
+
+    async def new(self, name: str | None = None) -> dict:
+        """Create a new blank engagement, auto-naming it if no name is given.
+
+        Auto-generated names use the sequential counter: ``eng-00001``,
+        ``eng-00002``, etc.  These are unique without a wall-clock RTC.
+        """
+        if name is None:
+            name = f"eng-{self._next_seq():05d}"
+        return await self.load(name)
 
     async def load(self, profile_name: str) -> dict:
         self._dir.mkdir(parents=True, exist_ok=True)

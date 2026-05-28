@@ -16,6 +16,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "mitm_ca_dir": "/userdata/config/ca",
     "hid_sequence_path": "/userdata/hid/hid-sequence.json",
     "hid_payload_dir": "/userdata/captures/payloads",
+    "usb_device_config_path": "/userdata/config/usb-device.json",
     "ui": {
         "listen": "127.0.0.1",
         "port": 8171,

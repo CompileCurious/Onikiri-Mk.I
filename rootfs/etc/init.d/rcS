@@ -56,7 +56,14 @@ mkdir -p \
     "${USERDATA_MNT}/modules" \
     "${USERDATA_MNT}/config" \
     "${USERDATA_MNT}/captures" \
+    "${USERDATA_MNT}/captures/payloads" \
     "${USERDATA_MNT}/logs"
+
+# ── Boot-partition inbox import ───────────────────────────────────────────────
+# Copy files from FAT32 p1 (accessible from any OS) into /userdata.
+# HID scripts, payload files, and usb-device.json placed on the boot partition
+# are imported here on every boot before the supervisor starts.
+/etc/init.d/S03boot-import
 
 # ── Loopback interface ────────────────────────────────────────────────────────
 ip link set lo up

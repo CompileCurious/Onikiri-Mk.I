@@ -185,6 +185,7 @@ assemble_rootfs() {
     # Essential directory tree
     for d in bin sbin usr/bin usr/sbin lib etc etc/init.d proc sys dev run tmp \
               userdata \
+              mnt/boot \
               usr/local/onikiri/supervisor \
               usr/local/onikiri/modules \
               usr/local/onikiri/ui \
@@ -208,6 +209,7 @@ assemble_rootfs() {
     # Copy init scripts
     install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcS"              "${ROOTFS_STAGE}/etc/init.d/rcS"
     install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcK"              "${ROOTFS_STAGE}/etc/init.d/rcK"
+    install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S03boot-import"   "${ROOTFS_STAGE}/etc/init.d/S03boot-import"
     install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S05userdata-init" "${ROOTFS_STAGE}/etc/init.d/S05userdata-init"
     install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S10network"       "${ROOTFS_STAGE}/etc/init.d/S10network"
     install -m644 "${REPO_ROOT}/rootfs/etc/inittab"                 "${ROOTFS_STAGE}/etc/inittab"

@@ -1,0 +1,118 @@
+#!/bin/sh
+# /etc/init.d/S03boot-import — Onikiri Mk.I boot-partition inbox importer
+#
+# Runs after /userdata is mounted (called from rcS).
+# Mounts the FAT32 boot partition (p1 = /dev/mmcblk0p1, label ONIKIRI-BOOT)
+# read-only, copies user-dropped files into /userdata, then unmounts.
+#
+# FAT32 is readable and writable from any OS without special drivers, so p1
+# acts as the "inbox" for getting files onto the device without SSH/USB.
+#
+# Inbox layout on the boot partition (user creates these dirs):
+#
+#   ONIKIRI-BOOT/
+#     hid/           ← .json HID sequences, .duck/.txt/.payload scripts
+#     payloads/      ← raw payload files (also parsed as HID if requested)
+#     usb-device.json  ← USB HID device identity override  (see below)
+#     config/        ← arbitrary .json/.conf config overrides
+#
+# Destination inside /userdata (persistent ext4 p3):
+#
+#   hid/*.json|*.duck|*.txt|*.payload  → /userdata/hid/
+#   payloads/*                         → /userdata/captures/payloads/
+#   usb-device.json                    → /userdata/config/usb-device.json
+#   config/*.json|*.conf               → /userdata/config/
+#
+# usb-device.json format (choose one):
+#   {"profile": "logitech_receiver"}          ← built-in profile name
+#   {"vid":"0x046d","pid":"0xc52b",           ← full custom identity
+#    "manufacturer":"Logitech","product":"USB Receiver","serial":"000001"}
+#
+# Naming without RTC
+# ------------------
+# Imported files keep their original filename on the boot partition.
+# If a file already exists in /userdata the copy OVERWRITES it, so the
+# boot partition always "wins" on the next boot — intentional for updates.
+#
+# Files are NOT removed from the boot partition after import; they remain
+# as a reference / backup and are re-imported on every boot.  To prevent
+# re-import, delete or rename the file on the boot partition.
+
+BOOT_DEV=/dev/mmcblk0p1
+BOOT_MNT=/mnt/boot
+
+log() { echo "[S03boot-import] $*" >&2; }
+
+# ── Bail if boot device is absent (dev/emulation without real SD card) ────────
+if ! [ -b "${BOOT_DEV}" ]; then
+    log "${BOOT_DEV} not present — skipping boot-partition import"
+    exit 0
+fi
+
+mkdir -p "${BOOT_MNT}"
+if ! mount -t vfat "${BOOT_DEV}" "${BOOT_MNT}" -o ro,noatime 2>/dev/null; then
+    log "Could not mount ${BOOT_DEV} — skipping boot-partition import"
+    exit 0
+fi
+
+imported=0
+
+# ── HID sequences and scripts ─────────────────────────────────────────────────
+if [ -d "${BOOT_MNT}/hid" ]; then
+    mkdir -p /userdata/hid
+    for f in "${BOOT_MNT}/hid/"*.json \
+              "${BOOT_MNT}/hid/"*.duck \
+              "${BOOT_MNT}/hid/"*.txt \
+              "${BOOT_MNT}/hid/"*.payload; do
+        [ -f "$f" ] || continue
+        fname="$(basename "$f")"
+        if cp -f "$f" "/userdata/hid/${fname}" 2>/dev/null; then
+            log "HID: ${fname}"
+            imported=$(( imported + 1 ))
+        fi
+    done
+fi
+
+# ── Raw payload scripts ───────────────────────────────────────────────────────
+if [ -d "${BOOT_MNT}/payloads" ]; then
+    mkdir -p /userdata/captures/payloads
+    for f in "${BOOT_MNT}/payloads/"*; do
+        [ -f "$f" ] || continue
+        fname="$(basename "$f")"
+        if cp -f "$f" "/userdata/captures/payloads/${fname}" 2>/dev/null; then
+            log "Payload: ${fname}"
+            imported=$(( imported + 1 ))
+        fi
+    done
+fi
+
+# ── USB device identity override ──────────────────────────────────────────────
+if [ -f "${BOOT_MNT}/usb-device.json" ]; then
+    mkdir -p /userdata/config
+    if cp -f "${BOOT_MNT}/usb-device.json" /userdata/config/usb-device.json 2>/dev/null; then
+        log "usb-device.json imported"
+        imported=$(( imported + 1 ))
+    fi
+fi
+
+# ── Generic config overrides ──────────────────────────────────────────────────
+if [ -d "${BOOT_MNT}/config" ]; then
+    mkdir -p /userdata/config
+    for f in "${BOOT_MNT}/config/"*.json \
+              "${BOOT_MNT}/config/"*.conf; do
+        [ -f "$f" ] || continue
+        fname="$(basename "$f")"
+        if cp -f "$f" "/userdata/config/${fname}" 2>/dev/null; then
+            log "Config: ${fname}"
+            imported=$(( imported + 1 ))
+        fi
+    done
+fi
+
+umount "${BOOT_MNT}" 2>/dev/null || true
+
+if [ "${imported}" -gt 0 ]; then
+    log "Imported ${imported} file(s) from boot partition"
+else
+    log "No new files on boot partition"
+fi

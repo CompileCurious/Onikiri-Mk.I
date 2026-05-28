@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -51,6 +52,7 @@ class HidGadgetModule(BaseModule):
             "replace_blocks",
             "list_devices",
             "set_device",
+            "get_device_config",
             "setup_gadget",
             "teardown_gadget",
             "start",
@@ -59,6 +61,8 @@ class HidGadgetModule(BaseModule):
             "sd_preview",
             "sd_import",
             "sd_run_raw",
+            "boot_list",
+            "boot_import",
             "export",
         )
 
@@ -78,6 +82,28 @@ class HidGadgetModule(BaseModule):
 
     def _payload_dir(self, context: SupervisorContext) -> Path:
         return Path(context.config.get("hid_payload_dir", "/userdata/captures/payloads"))
+
+    def _usb_device_config(self, context: SupervisorContext) -> Optional[Dict[str, Any]]:
+        """Load the USB device identity override from /userdata/config/usb-device.json.
+
+        This file is placed there by S03boot-import from the FAT32 boot partition.
+        Format: {"profile": "<built-in-id>"}  OR full custom identity with
+        vid/pid/manufacturer/product/serial fields.  Returns None if not present.
+        """
+        path = Path(context.config.get("usb_device_config_path",
+                                        "/userdata/config/usb-device.json"))
+        if not path.exists():
+            return None
+        try:
+            return json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            return None
+
+    def _boot_hid_dir(self) -> Path:
+        return Path("/mnt/boot/hid")
+
+    def _boot_payload_dir(self) -> Path:
+        return Path("/mnt/boot/payloads")
 
     # ------------------------------------------------------------------
     # Status
@@ -215,6 +241,122 @@ class HidGadgetModule(BaseModule):
             })
         return {"status": "ok", "module": self.name, "device_profile": profile_id}
 
+    def action_get_device_config(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """Return the effective USB device identity.
+
+        Priority: /userdata/config/usb-device.json (from boot-partition import)
+        > store meta custom_device > built-in profile.
+        """
+        file_config = self._usb_device_config(context)
+        store = self._get_store(context)
+        meta = store.get_meta()
+        built_in_profiles = list(USB_DEVICE_PROFILES.keys())
+        return {
+            "status": "ok",
+            "module": self.name,
+            "file_config": file_config,
+            "store_profile": meta.get("device_profile", "generic_keyboard"),
+            "store_custom": meta.get("custom_device"),
+            "built_in_profiles": built_in_profiles,
+            "note": ("file_config overrides store_profile when setup_gadget runs "
+                     "if it contains a valid profile or VID/PID fields"),
+        }
+
+    # ------------------------------------------------------------------
+    # Boot-partition inbox (FAT32 p1 = ONIKIRI-BOOT)
+    # ------------------------------------------------------------------
+
+    def action_boot_list(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """List files available in the boot-partition HID inbox (/mnt/boot/hid/).
+
+        The boot partition is the FAT32 p1 partition mounted at /mnt/boot by
+        S03boot-import.  Files placed here by the user (from any OS) are
+        auto-imported to /userdata on every boot.  This action shows what is
+        currently in the inbox for interactive review.
+        """
+        boot_dir = self._boot_hid_dir()
+        payload_dir = self._boot_payload_dir()
+        hid_files: List[Dict[str, Any]] = []
+        payload_files: List[Dict[str, Any]] = []
+
+        if boot_dir.exists():
+            for entry in sorted(boot_dir.iterdir()):
+                if entry.is_file() and entry.suffix.lower() in (
+                    ".json", ".duck", ".txt", ".payload"
+                ):
+                    hid_files.append({"name": entry.name, "size": entry.stat().st_size})
+
+        if payload_dir.exists():
+            for entry in sorted(payload_dir.iterdir()):
+                if entry.is_file():
+                    payload_files.append({"name": entry.name, "size": entry.stat().st_size})
+
+        boot_mounted = Path("/mnt/boot").is_mount()
+        return {
+            "status": "ok",
+            "module": self.name,
+            "boot_mounted": boot_mounted,
+            "hid_inbox": hid_files,
+            "payload_inbox": payload_files,
+            "note": "Files are auto-imported to /userdata on every boot by S03boot-import.",
+        }
+
+    def action_boot_import(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """Manually trigger an import of a single file from the boot-partition inbox.
+
+        params:
+          filename  — name of a file in /mnt/boot/hid/ or /mnt/boot/payloads/
+          source    — "hid" (default) or "payloads"
+          import_blocks — if true and source=="hid", also load the sequence into
+                          the active store (same as sd_import).
+        """
+        filename = params.get("filename", "")
+        if not filename or "/" in filename or ".." in filename:
+            return {"status": "error", "module": self.name, "error": "invalid filename"}
+
+        source = params.get("source", "hid")
+        if source == "payloads":
+            src_path = self._boot_payload_dir() / filename
+            dst_dir = self._payload_dir(context)
+        else:
+            src_path = self._boot_hid_dir() / filename
+            dst_dir = Path("/userdata/hid")
+
+        if not src_path.exists():
+            return {"status": "error", "module": self.name,
+                    "error": f"not found in boot inbox: {filename}"}
+
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        dst_path = dst_dir / filename
+        try:
+            import shutil
+            shutil.copy2(str(src_path), str(dst_path))
+        except OSError as exc:
+            return {"status": "error", "module": self.name, "error": str(exc)}
+
+        result: Dict[str, Any] = {
+            "status": "ok",
+            "module": self.name,
+            "imported": filename,
+            "destination": str(dst_path),
+        }
+
+        # Optionally load into active HID store
+        if params.get("import_blocks") and source == "hid":
+            try:
+                content = dst_path.read_text(errors="replace")
+                fmt, blocks = parse_payload_file(filename, content)
+                store = self._get_store(context)
+                imported = store.replace_all(blocks)
+                store.set_meta("name", filename)
+                result["format"] = fmt
+                result["block_count"] = len(imported)
+                result["blocks"] = imported
+            except Exception as exc:
+                result["parse_warning"] = str(exc)
+
+        return result
+
     # ------------------------------------------------------------------
     # USB gadget ConfigFS setup / teardown
     # ------------------------------------------------------------------
@@ -235,7 +377,24 @@ class HidGadgetModule(BaseModule):
         meta = store.get_meta()
         profile_id = meta.get("device_profile", "generic_keyboard")
 
-        if profile_id in USB_DEVICE_PROFILES:
+        # Priority: /userdata/config/usb-device.json (boot-partition import)
+        #           > store meta custom_device > built-in profile
+        file_cfg = self._usb_device_config(context)
+        if file_cfg is not None:
+            if "profile" in file_cfg and file_cfg["profile"] in USB_DEVICE_PROFILES:
+                profile = USB_DEVICE_PROFILES[file_cfg["profile"]]
+            elif "vid" in file_cfg and "pid" in file_cfg:
+                profile = {
+                    "vid": file_cfg.get("vid", "0x1d6b"),
+                    "pid": file_cfg.get("pid", "0x0104"),
+                    "manufacturer": file_cfg.get("manufacturer", "Custom"),
+                    "product": file_cfg.get("product", "USB Keyboard"),
+                    "serial": file_cfg.get("serial", "0000000001"),
+                }
+            else:
+                profile = USB_DEVICE_PROFILES.get(profile_id,
+                                                   USB_DEVICE_PROFILES["generic_keyboard"])
+        elif profile_id in USB_DEVICE_PROFILES:
             profile = USB_DEVICE_PROFILES[profile_id]
         else:
             profile = meta.get("custom_device", USB_DEVICE_PROFILES["generic_keyboard"])

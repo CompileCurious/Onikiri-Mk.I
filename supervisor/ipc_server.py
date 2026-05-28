@@ -28,15 +28,17 @@ class IPCServer:
         self._supervisor = supervisor
         self._server: asyncio.Server | None = None
         self._handlers: dict[str, _Handler] = {
-            "list_modules":    self._h_list_modules,
-            "module_status":   self._h_module_status,
-            "execute":         self._h_execute,
-            "job_status":      self._h_job_status,
-            "list_jobs":       self._h_list_jobs,
-            "cancel_job":      self._h_cancel_job,
-            "load_engagement": self._h_load_engagement,
-            "wipe_engagement": self._h_wipe_engagement,
-            "system_status":   self._h_system_status,
+            "list_modules":      self._h_list_modules,
+            "module_status":     self._h_module_status,
+            "execute":           self._h_execute,
+            "job_status":        self._h_job_status,
+            "list_jobs":         self._h_list_jobs,
+            "cancel_job":        self._h_cancel_job,
+            "load_engagement":   self._h_load_engagement,
+            "new_engagement":    self._h_new_engagement,
+            "list_engagements":  self._h_list_engagements,
+            "wipe_engagement":   self._h_wipe_engagement,
+            "system_status":     self._h_system_status,
         }
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -138,6 +140,15 @@ class IPCServer:
 
     async def _h_load_engagement(self, args: dict) -> dict:
         return await self._supervisor.engagement.load(args["profile"])
+
+    async def _h_new_engagement(self, args: dict) -> dict:
+        """Create a new engagement.  Auto-generates a sequential name if
+        ``name`` is omitted, e.g. ``eng-00001`` (no-RTC safe)."""
+        name = args.get("name")  # optional
+        return await self._supervisor.engagement.new(name)
+
+    async def _h_list_engagements(self, _args: dict) -> dict:
+        return self._supervisor.engagement.list_profiles()
 
     async def _h_wipe_engagement(self, _args: dict) -> dict:
         return await self._supervisor.engagement.wipe()
