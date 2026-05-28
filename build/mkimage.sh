@@ -127,7 +127,7 @@ ROOT_DEV="${LOOP}p2"
 
 # ── Format boot partition ─────────────────────────────────────────────────────
 log "Formatting p1 (FAT32 boot)"
-mkfs.fat -F32 -n "ONIKIRI-BOOT" "${BOOT_DEV}"
+mkfs.fat -F32 -n "ONIKIRI-BOT" "${BOOT_DEV}"
 
 # ── Boot partition contents ────────────────────────────────────────────────────
 TMP_BOOT=$(mktemp -d)
