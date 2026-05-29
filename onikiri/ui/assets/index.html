@@ -14,9 +14,12 @@
       <header class="topbar">
         <div>
           <h1>ONIKIRI MK.I</h1>
-          <p>Minimal field interface</p>
+          <p>HARDWARE-AWARE FIELD TOOLKIT</p>
         </div>
-        <button id="wipe-button" class="danger">WIPE ENGAGEMENT DATA</button>
+        <div class="topbar-right">
+          <span id="proc-badge" class="proc-badge hidden"><span id="proc-count">0</span> ACTIVE</span>
+          <button id="wipe-button" class="danger">WIPE</button>
+        </div>
       </header>
       <section id="panel-grid" class="panel-grid"></section>
     </main>
@@ -263,11 +266,180 @@
       </div>
     </aside>
 
+    <!-- ================================================================
+         GADGET AUTOMATION VIEW
+    ================================================================ -->
+    <main id="gadget-view" class="gadget-view hidden">
+      <header class="topbar">
+        <div>
+          <h1>GADGET AUTOMATION</h1>
+          <p>USB GADGET WORKFLOW ENGINE</p>
+        </div>
+        <button id="gadget-back">◀ BACK</button>
+      </header>
+
+      <div class="gadget-body">
+        <!-- ---- Left: Gadget control panel ---- -->
+        <section class="gadget-control">
+
+          <!-- Status -->
+          <div class="control-status">
+            <span class="status-dot" id="gadget-dot"></span>
+            <span id="gadget-status-label">INACTIVE</span>
+          </div>
+
+          <!-- Workflow selector -->
+          <div class="control-block">
+            <label class="field-label">WORKFLOW</label>
+            <select id="gadget-wf-select" class="field-input"></select>
+          </div>
+
+          <!-- Detected OS hint -->
+          <div class="control-block">
+            <label class="field-label">HOST OS (hint)</label>
+            <select id="gadget-os-hint" class="field-input">
+              <option value="">(auto)</option>
+              <option value="windows">Windows</option>
+              <option value="linux">Linux</option>
+              <option value="macos">macOS</option>
+              <option value="android">Android</option>
+              <option value="ios">iOS</option>
+            </select>
+          </div>
+
+          <!-- Run / stop -->
+          <div class="control-row">
+            <button id="gadget-run-btn" class="control-action">RUN WORKFLOW</button>
+            <button id="gadget-stop-btn" class="control-action danger">STOP</button>
+          </div>
+
+          <!-- Gadget profile status -->
+          <div class="control-block">
+            <label class="field-label">ACTIVE GADGET PROFILE</label>
+            <span id="gadget-profile-label" class="field-value-mono">NONE</span>
+          </div>
+
+          <!-- Gadget profile quick-switch -->
+          <div class="control-block">
+            <label class="field-label">QUICK SWITCH PROFILE</label>
+            <div class="control-row" style="flex-wrap:wrap;gap:0.35rem;">
+              <button id="gadget-sw-hid" class="control-secondary">HID</button>
+              <button id="gadget-sw-serial" class="control-secondary">SERIAL</button>
+              <button id="gadget-sw-eth" class="control-secondary">ETHERNET</button>
+              <button id="gadget-sw-composite" class="control-secondary">COMPOSITE</button>
+              <button id="gadget-teardown-btn" class="control-secondary danger">TEARDOWN</button>
+            </div>
+          </div>
+
+          <!-- SD card workflow loader -->
+          <div class="control-block">
+            <label class="field-label">SD CARD WORKFLOWS</label>
+            <select id="gadget-sd-file" class="field-input" style="margin-top:0.35rem;"></select>
+            <div class="control-row" style="margin-top:0.5rem;">
+              <button id="gadget-sd-preview-btn" class="control-secondary">PREVIEW</button>
+              <button id="gadget-sd-import-btn" class="control-secondary">IMPORT</button>
+            </div>
+            <div id="gadget-sd-preview-box" class="hid-sd-preview hidden"></div>
+          </div>
+
+          <!-- Execution log -->
+          <div class="control-block">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="field-label">EXECUTION LOG</label>
+              <button id="gadget-log-refresh-btn" class="control-secondary" style="padding:0.4rem 0.7rem;font-size:0.75rem;">↻</button>
+            </div>
+            <pre id="gadget-log-box" class="gadget-log-box"></pre>
+          </div>
+
+        </section>
+
+        <!-- ---- Right: Block editor ---- -->
+        <section class="gadget-blocks-panel">
+          <div class="rules-header">
+            <span class="section-title">WORKFLOW BLOCKS</span>
+            <span id="gadget-block-count" class="rule-count">0</span>
+            <div style="display:flex;gap:0.5rem;">
+              <button id="gadget-new-wf-btn" class="control-secondary">NEW</button>
+              <button id="gadget-save-wf-btn" class="control-secondary">SAVE</button>
+              <button id="gadget-del-wf-btn" class="control-secondary danger">DELETE</button>
+              <button id="gadget-export-btn" class="control-secondary">EXPORT→SD</button>
+              <button id="gadget-add-block-btn">+ ADD BLOCK</button>
+            </div>
+          </div>
+
+          <!-- Workflow metadata bar -->
+          <div class="gadget-wf-meta">
+            <span class="rule-kw">NAME</span>
+            <input id="gadget-wf-name" class="ed-input" type="text" placeholder="Workflow name" style="flex:1;" />
+            <span class="rule-kw">TRIGGER</span>
+            <select id="gadget-wf-trigger" class="ed-select"></select>
+          </div>
+
+          <!-- Block list -->
+          <div id="gadget-block-list" class="rule-list gadget-block-list"></div>
+
+          <!-- Block editor (inline) -->
+          <div id="gadget-block-editor" class="rule-editor hidden">
+            <div class="editor-title">BLOCK EDITOR</div>
+
+            <div class="editor-row">
+              <span class="rule-kw">CATEGORY</span>
+              <select id="gbe-category" class="ed-select"></select>
+            </div>
+            <div class="editor-row">
+              <span class="rule-kw">TYPE</span>
+              <select id="gbe-type" class="ed-select"></select>
+            </div>
+
+            <!-- Dynamic param rows injected by JS -->
+            <div id="gbe-params" class="be-params"></div>
+
+            <div class="editor-row">
+              <button id="gbe-save">ADD BLOCK</button>
+              <button id="gbe-cancel">CANCEL</button>
+            </div>
+
+            <div id="gbe-error" class="editor-error hidden"></div>
+          </div>
+
+          <!-- Export to SD dialog -->
+          <div id="gadget-export-dialog" class="rule-editor hidden">
+            <div class="editor-title">EXPORT TO SD CARD</div>
+            <div class="editor-row">
+              <span class="rule-kw">FILENAME</span>
+              <input id="gadget-export-filename" class="ed-input" type="text" placeholder="my-workflow.workflow" />
+            </div>
+            <div class="editor-row">
+              <button id="gadget-export-confirm">EXPORT</button>
+              <button id="gadget-export-cancel">CANCEL</button>
+            </div>
+            <div id="gadget-export-error" class="editor-error hidden"></div>
+          </div>
+
+        </section>
+      </div>
+    </main>
+
+    <!-- Stop-process confirmation dialog -->
+    <div id="stop-dialog" class="stop-dialog hidden">
+      <div class="stop-dialog-card">
+        <div class="editor-title">TERMINATE PROCESS</div>
+        <p id="stop-dialog-label" class="stop-dialog-target"></p>
+        <div class="editor-row" style="justify-content:flex-end;gap:0.8rem;">
+          <button id="stop-dialog-confirm" class="danger">TERMINATE</button>
+          <button id="stop-dialog-cancel">CANCEL</button>
+        </div>
+      </div>
+    </div>
+
     <template id="panel-template">
       <button class="panel" type="button">
-        <span class="panel-icon">▣</span>
+        <span class="panel-icon"></span>
         <span class="panel-label"></span>
-        <span class="status-strip">INACTIVE</span>
+        <span class="status-strip">
+          <span class="hw-dot"></span>
+          <span class="status-text">INACTIVE</span>
+        </span>
       </button>
     </template>
 

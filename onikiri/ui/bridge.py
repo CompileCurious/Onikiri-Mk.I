@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import glob as _glob
 import json
 import shlex
 import subprocess
@@ -13,6 +14,38 @@ from urllib.parse import urlparse
 
 from onikiri.config import load_config
 from onikiri.ipc import IPCClient
+
+
+def _detect_hardware() -> Dict[str, bool]:
+    """Probe the system for known offensive hardware adapters via lsusb."""
+    hw: Dict[str, bool] = {
+        "alfa_wifi": False,
+        "bluetooth": False,
+        "rtlsdr": False,
+        "nfc": False,
+        "serial": False,
+    }
+    try:
+        out = subprocess.run(
+            ["lsusb"], capture_output=True, text=True, timeout=3
+        ).stdout.lower()
+        # Realtek / Mediatek / Ralink — covers Alfa AWUS adapters and common offensive Wi-Fi
+        if any(v in out for v in ("0bda:", "0e8d:", "148f:", "2357:", "7392:")):
+            hw["alfa_wifi"] = True
+        # Bluetooth dongles: CSR, Broadcom, Intel, Realtek, Atheros
+        if any(v in out for v in ("0a12:", "8087:0a2b", "0bda:b00", "13d3:", "0cf3:")):
+            hw["bluetooth"] = True
+        # RTL-SDR v3 / RTL2832U generic
+        if "0bda:2832" in out or "0bda:2838" in out:
+            hw["rtlsdr"] = True
+        # ACR122U / PN532 / Sony NFC/RFID readers
+        if any(v in out for v in ("072f:2200", "04e6:5591", "054c:06c1", "04cc:2533")):
+            hw["nfc"] = True
+    except Exception:
+        pass
+    if _glob.glob("/dev/ttyUSB*") or _glob.glob("/dev/ttyACM*"):
+        hw["serial"] = True
+    return hw
 
 
 class BridgeState:
@@ -40,6 +73,7 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             payload = {
                 "modules": self.state.request("list_modules").get("modules", []),
                 "jobs": self.state.request("list_jobs").get("jobs", []),
+                "hardware": _detect_hardware(),
             }
             self.respond(payload)
             return
@@ -77,6 +111,29 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/hid/sd/list":
             response = self.state.request("hid_sd_list")
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/state":
+            status = self.state.request("gadget_auto_status")
+            manifest = self.state.request("gadget_auto_manifest")
+            workflows = self.state.request("gadget_auto_list_workflows")
+            gadget = self.state.request("gadget_auto_get_gadget_state")
+            payload = {
+                "status": status.get("status", "inactive"),
+                "running": status.get("running", False),
+                "active_workflow_id": status.get("active_workflow_id"),
+                "gadget_profile": gadget.get("current_profile"),
+                "schema": manifest.get("schema", {}),
+                "workflows": workflows.get("workflows", []),
+            }
+            self.respond(payload)
+            return
+        if parsed.path == "/api/gadget/sd/list":
+            response = self.state.request("gadget_auto_sd_list")
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/logs":
+            response = self.state.request("gadget_auto_get_logs")
             self.respond(response)
             return
         if parsed.path == "/":
@@ -210,6 +267,72 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/hid/export":
             response = self.state.request("hid_export", **payload)
+            self.respond(response)
+            return
+        # ------------------------------------------------------------------
+        # Gadget Automation endpoints
+        # ------------------------------------------------------------------
+        if parsed.path == "/api/gadget/workflow/save":
+            response = self.state.request("gadget_auto_save_workflow", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/workflow/delete":
+            response = self.state.request("gadget_auto_delete_workflow", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/workflow/get":
+            response = self.state.request("gadget_auto_get_workflow", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/workflow/validate":
+            response = self.state.request("gadget_auto_validate", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/workflow/run":
+            response = self.state.request("gadget_auto_run_workflow", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/workflow/stop":
+            response = self.state.request("gadget_auto_stop_workflow")
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/workflow/blocks/replace":
+            response = self.state.request("gadget_auto_replace_blocks", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/sd/preview":
+            response = self.state.request("gadget_auto_sd_preview", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/sd/import":
+            response = self.state.request("gadget_auto_sd_import", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/sd/export":
+            response = self.state.request("gadget_auto_sd_export", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/teardown":
+            response = self.state.request("gadget_auto_gadget_teardown")
+            self.respond(response)
+            return
+        if parsed.path == "/api/stop_module":
+            label = payload.get("label", "")
+            _STOP_MAP: Dict[str, str] = {
+                "MITM":       "mitm_stop",
+                "USB GADGET": "gadget_auto_stop_workflow",
+                "WI-FI":      "wifi_recon_stop",
+                "AUTO-RECON": "network_scanner_stop",
+                "BLE/NFC":    "bluetooth_recon_stop",
+            }
+            action = _STOP_MAP.get(label)
+            if action:
+                try:
+                    response = self.state.request(action)
+                except Exception as exc:  # pragma: no cover
+                    response = {"status": "error", "error": str(exc)}
+            else:
+                response = {"status": "ok", "info": "no stop action registered for this module"}
             self.respond(response)
             return
         self.send_error(HTTPStatus.NOT_FOUND, "unknown endpoint")

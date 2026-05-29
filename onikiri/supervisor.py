@@ -120,6 +120,16 @@ class Supervisor:
             module_action = action[len("hid_"):]  # strip "hid_" prefix
             params = {k: v for k, v in request.items() if k != "action"}
             return await hid.execute(module_action, params, self.context)
+        # ------------------------------------------------------------------
+        # Gadget Automation direct actions
+        # ------------------------------------------------------------------
+        if action.startswith("gadget_auto_"):
+            mod = self.modules.get("gadget_automation")
+            if mod is None:
+                return {"status": "error", "error": "gadget_automation module not loaded"}
+            module_action = action[len("gadget_auto_"):]  # strip "gadget_auto_" prefix
+            params = {k: v for k, v in request.items() if k != "action"}
+            return await mod.execute(module_action, params, self.context)
         raise KeyError(f"unsupported action: {action}")
 
     def wipe_engagement_data(self) -> list[str]:

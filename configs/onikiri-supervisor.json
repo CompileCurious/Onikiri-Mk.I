@@ -11,6 +11,8 @@
   "mitm_ca_dir": "/userdata/config/ca",
   "hid_sequence_path": "/userdata/hid/hid-sequence.json",
   "hid_payload_dir": "/userdata/captures/payloads",
+  "gadget_workflow_path": "/userdata/gadget/workflows.json",
+  "sd_mount": "/mnt/sd",
   "ui": {
     "listen": "127.0.0.1",
     "port": 8171,
@@ -26,6 +28,7 @@
     "network_scanner",
     "bluetooth_recon",
     "hid_gadget",
+    "gadget_automation",
     "payload_builder",
     "engagement",
     "system_info"

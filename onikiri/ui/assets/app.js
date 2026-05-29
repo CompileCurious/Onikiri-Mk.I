@@ -3,13 +3,35 @@
 // =============================================================================
 
 const moduleDefaults = {
-  RECON: { module: "network_scanner", module_action: "inventory", params: {} },
-  WIRELESS: { module: "wifi_recon", module_action: "survey", params: {} },
-  ENGAGEMENT: { module: "engagement", module_action: "active_profile", params: {} },
-  SYSTEM: { module: "system_info", module_action: "snapshot", params: {} }
+  "AUTO-RECON": { module: "network_scanner", module_action: "inventory", params: {} },
+  "SYS TOOLS":  { module: "system_info",    module_action: "snapshot",  params: {} },
 };
 
-const panelOrder = ["RECON", "MITM", "HID", "WIRELESS", "ENGAGEMENT", "SYSTEM"];
+const panelOrder = [
+  "WI-FI",      "AUTO-RECON",  "ROGUE AP",
+  "MITM",       "USB GADGET",  "BLE/NFC",
+  "EXPLOITS",   "SYS TOOLS",   "DASHBOARD",
+];
+
+// Per-tile metadata: icon glyph, descriptive label, required hardware key, backend module names
+const PANEL_META = {
+  "WI-FI":      { icon: "≈≈≈",  desc: "WI-FI OFFENSE",   hw: "alfa_wifi",  mods: ["wifi_recon"] },
+  "AUTO-RECON": { icon: "◎",  desc: "NETWORK RECON",    hw: null,          mods: ["network_scanner"] },
+  "ROGUE AP":   { icon: "⊗",  desc: "ROGUE AP ENGINE",  hw: "alfa_wifi",  mods: [] },
+  "MITM":       { icon: "⇌",  desc: "MITM ENGINE",      hw: null,          mods: ["mitm"] },
+  "USB GADGET": { icon: "⊞",  desc: "USB GADGET MODE",  hw: null,          mods: ["hid_gadget", "gadget_automation"] },
+  "BLE/NFC":    { icon: "◈",  desc: "BLE / NFC RECON",  hw: "ble_nfc",    mods: ["bluetooth_recon"] },
+  "EXPLOITS":   { icon: "⊘",  desc: "EXPLOIT SUITE",    hw: null,          mods: [] },
+  "SYS TOOLS":  { icon: "⊟",  desc: "SYSTEM TOOLS",     hw: null,          mods: ["system_info"] },
+  "DASHBOARD":  { icon: "▦",  desc: "HUD / DASHBOARD",  hw: null,          mods: [] },
+};
+
+function hasHardware(hwKey, hardware) {
+  if (!hwKey) return true;
+  if (hwKey === "ble_nfc") return !!(hardware.bluetooth || hardware.nfc);
+  return !!hardware[hwKey];
+}
+
 const panelGrid = document.getElementById("panel-grid");
 const panelTemplate = document.getElementById("panel-template");
 const overlay = document.getElementById("overlay");
@@ -60,17 +82,46 @@ function clearPanels() {
   panelGrid.replaceChildren();
 }
 
-function renderPanels(modules, jobs) {
+function renderPanels(modules, jobs, hardware) {
   clearPanels();
-  const activeModules = new Map(modules.map((item) => [item.label, item]));
+  // Set of actively-running backend module names
+  const runningMods = new Set(
+    modules.filter((m) => m.status === "active" || m.running).map((m) => m.name)
+  );
+  let procCount = 0;
+
   panelOrder.forEach((label) => {
+    const meta = PANEL_META[label] || { icon: "▣", desc: label, hw: null, mods: [] };
     const node = panelTemplate.content.firstElementChild.cloneNode(true);
-    const module = activeModules.get(label) || { label, status: "inactive", name: label.toLowerCase() };
+
+    node.querySelector(".panel-icon").textContent = meta.icon;
     node.querySelector(".panel-label").textContent = label;
-    const statusStrip = node.querySelector(".status-strip");
-    statusStrip.textContent = (module.status || "inactive").toUpperCase();
-    if (module.status === "active") node.classList.add("active");
-    if (module.status === "error") node.classList.add("error");
+
+    const hwOk = hasHardware(meta.hw, hardware);
+    const isRunning = meta.mods.some((m) => runningMods.has(m));
+    const hasMod = modules.find((m) => meta.mods.includes(m.name));
+    const statusText = node.querySelector(".status-text");
+    const hwDot = node.querySelector(".hw-dot");
+
+    if (!hwOk) {
+      // Required hardware absent — grey tile, no glow
+      node.classList.add("no-hardware");
+      statusText.textContent = "NO HARDWARE";
+      hwDot.classList.add("hw-dot-missing");
+    } else {
+      if (hasMod?.status === "error") {
+        node.classList.add("error");
+        statusText.textContent = "ERROR";
+      } else if (isRunning) {
+        node.classList.add("running");
+        statusText.textContent = "RUNNING";
+        procCount++;
+      } else {
+        statusText.textContent = "INACTIVE";
+      }
+      // Show bright hw indicator only for tiles that need specific hardware
+      if (meta.hw) hwDot.classList.add("hw-dot-ok");
+    }
 
     let longPressTimer = null;
     let didLongPress = false;
@@ -78,7 +129,11 @@ function renderPanels(modules, jobs) {
       didLongPress = false;
       longPressTimer = setTimeout(() => {
         didLongPress = true;
-        setOverlay(label, module);
+        if (isRunning && hwOk) {
+          openStopDialog(label);
+        } else {
+          setOverlay(label, { module: meta.desc, hardware: hwOk ? "PRESENT" : "ABSENT", requires: meta.hw || "NONE" });
+        }
       }, longPressMs);
     };
     const clearLongPress = () => {
@@ -92,28 +147,49 @@ function renderPanels(modules, jobs) {
       clearLongPress();
       if (wasLong) return;
 
-      // Feature panels open dedicated views
-      if (label === "MITM") { openMitmView(); return; }
-      if (label === "HID") { openHidView(); return; }
+      if (!hwOk) {
+        setOverlay(label, { status: "HARDWARE UNAVAILABLE", requires: meta.hw });
+        return;
+      }
 
-      node.classList.remove("flash");
-      void node.offsetWidth;
-      node.classList.add("flash");
-      const panelConfig = moduleDefaults[label];
-      if (!panelConfig) return;
-      const payload = await apiPost("/api/run", panelConfig);
-      setOverlay(label, payload);
-      refreshDashboard();
+      // Tiles with dedicated views
+      if (label === "MITM")       { openMitmView();   return; }
+      if (label === "USB GADGET") { openGadgetView(); return; }
+
+      // Quick-run tiles
+      if (label in moduleDefaults) {
+        node.classList.remove("flash");
+        void node.offsetWidth;
+        node.classList.add("flash");
+        const panelConfig = moduleDefaults[label];
+        const payload = await apiPost("/api/run", panelConfig);
+        setOverlay(label, payload);
+        refreshDashboard();
+        return;
+      }
+
+      // Tiles pending full implementation
+      setOverlay(label, { status: "PENDING", module: meta.desc, info: "dedicated view coming soon" });
     });
     node.addEventListener("pointerleave", clearLongPress);
     node.addEventListener("pointercancel", clearLongPress);
     panelGrid.appendChild(node);
   });
+
+  // Update active process count badge in topbar
+  const procBadge = document.getElementById("proc-badge");
+  const procCountEl = document.getElementById("proc-count");
+  if (procCount > 0) {
+    procCountEl.textContent = procCount;
+    procBadge.classList.remove("hidden");
+  } else {
+    procBadge.classList.add("hidden");
+  }
 }
 
 async function refreshDashboard() {
   const state = await api("/api/state");
-  renderPanels(state.modules || [], state.jobs || []);
+  renderPanels(state.modules || [], state.jobs || [], state.hardware || {});
 }
 
 wipeButton.addEventListener("click", async () => {
@@ -124,6 +200,36 @@ wipeButton.addEventListener("click", async () => {
 
 refreshDashboard();
 setInterval(refreshDashboard, 3000);
+
+// =============================================================================
+// Stop-process dialog
+// =============================================================================
+
+const stopDialog = document.getElementById("stop-dialog");
+const stopDialogLabel = document.getElementById("stop-dialog-label");
+const stopDialogConfirm = document.getElementById("stop-dialog-confirm");
+const stopDialogCancel = document.getElementById("stop-dialog-cancel");
+let stopDialogTarget = null;
+
+function openStopDialog(label) {
+  stopDialogTarget = label;
+  stopDialogLabel.textContent = label;
+  stopDialog.classList.remove("hidden");
+}
+
+stopDialogCancel.addEventListener("click", () => {
+  stopDialog.classList.add("hidden");
+  stopDialogTarget = null;
+});
+
+stopDialogConfirm.addEventListener("click", async () => {
+  if (!stopDialogTarget) return;
+  stopDialog.classList.add("hidden");
+  const resp = await apiPost("/api/stop_module", { label: stopDialogTarget });
+  setOverlay("STOP: " + stopDialogTarget, resp);
+  stopDialogTarget = null;
+  refreshDashboard();
+});
 
 // =============================================================================
 // MITM view
@@ -897,4 +1003,574 @@ hidSdRunBtn.addEventListener("click", async () => {
   setOverlay("RUN RAW", resp);
   refreshHidView();
 });
+
+// =============================================================================
+// Gadget Automation view
+// =============================================================================
+
+const gadgetView = document.getElementById("gadget-view");
+const gadgetBack = document.getElementById("gadget-back");
+const gadgetDot = document.getElementById("gadget-dot");
+const gadgetStatusLabel = document.getElementById("gadget-status-label");
+const gadgetRunBtn = document.getElementById("gadget-run-btn");
+const gadgetStopBtn = document.getElementById("gadget-stop-btn");
+const gadgetOsHint = document.getElementById("gadget-os-hint");
+const gadgetWfSelect = document.getElementById("gadget-wf-select");
+const gadgetProfileLabel = document.getElementById("gadget-profile-label");
+const gadgetSwHid = document.getElementById("gadget-sw-hid");
+const gadgetSwSerial = document.getElementById("gadget-sw-serial");
+const gadgetSwEth = document.getElementById("gadget-sw-eth");
+const gadgetSwComposite = document.getElementById("gadget-sw-composite");
+const gadgetTeardownBtn = document.getElementById("gadget-teardown-btn");
+const gadgetSdFile = document.getElementById("gadget-sd-file");
+const gadgetSdPreviewBtn = document.getElementById("gadget-sd-preview-btn");
+const gadgetSdImportBtn = document.getElementById("gadget-sd-import-btn");
+const gadgetSdPreviewBox = document.getElementById("gadget-sd-preview-box");
+const gadgetLogBox = document.getElementById("gadget-log-box");
+const gadgetLogRefreshBtn = document.getElementById("gadget-log-refresh-btn");
+const gadgetBlockCount = document.getElementById("gadget-block-count");
+const gadgetBlockList = document.getElementById("gadget-block-list");
+const gadgetNewWfBtn = document.getElementById("gadget-new-wf-btn");
+const gadgetSaveWfBtn = document.getElementById("gadget-save-wf-btn");
+const gadgetDelWfBtn = document.getElementById("gadget-del-wf-btn");
+const gadgetExportBtn = document.getElementById("gadget-export-btn");
+const gadgetAddBlockBtn = document.getElementById("gadget-add-block-btn");
+const gadgetWfName = document.getElementById("gadget-wf-name");
+const gadgetWfTrigger = document.getElementById("gadget-wf-trigger");
+const gadgetBlockEditor = document.getElementById("gadget-block-editor");
+const gbeCategory = document.getElementById("gbe-category");
+const gbeType = document.getElementById("gbe-type");
+const gbeParams = document.getElementById("gbe-params");
+const gbeSave = document.getElementById("gbe-save");
+const gbeCancel = document.getElementById("gbe-cancel");
+const gbeError = document.getElementById("gbe-error");
+const gadgetExportDialog = document.getElementById("gadget-export-dialog");
+const gadgetExportFilename = document.getElementById("gadget-export-filename");
+const gadgetExportConfirm = document.getElementById("gadget-export-confirm");
+const gadgetExportCancel = document.getElementById("gadget-export-cancel");
+const gadgetExportError = document.getElementById("gadget-export-error");
+
+let gadgetSchema = {};
+let gadgetWorkflows = [];
+let gadgetBlocks = [];
+let gadgetRefreshTimer = null;
+let gadgetActiveWfId = null;
+
+function openGadgetView() {
+  dashboardView.classList.add("hidden");
+  gadgetView.classList.remove("hidden");
+  if (gadgetRefreshTimer) clearInterval(gadgetRefreshTimer);
+  refreshGadgetView();
+  gadgetRefreshTimer = setInterval(refreshGadgetView, 3000);
+}
+
+function closeGadgetView() {
+  gadgetView.classList.add("hidden");
+  dashboardView.classList.remove("hidden");
+  if (gadgetRefreshTimer) { clearInterval(gadgetRefreshTimer); gadgetRefreshTimer = null; }
+}
+
+gadgetBack.addEventListener("click", closeGadgetView);
+
+async function refreshGadgetView() {
+  try {
+    const state = await api("/api/gadget/state");
+    applyGadgetState(state);
+  } catch (_) {}
+}
+
+function applyGadgetState(state) {
+  gadgetSchema = state.schema || {};
+  gadgetWorkflows = state.workflows || [];
+  const running = Boolean(state.running);
+  gadgetDot.classList.toggle("active", running);
+  gadgetStatusLabel.textContent = running ? "RUNNING" : "INACTIVE";
+  gadgetProfileLabel.textContent = state.gadget_profile ? state.gadget_profile.toUpperCase() : "NONE";
+
+  // Populate trigger dropdown once
+  if (gadgetWfTrigger.options.length === 0 && gadgetSchema.trigger_types) {
+    Object.entries(gadgetSchema.trigger_types).forEach(([id, label]) => {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = label.toUpperCase();
+      gadgetWfTrigger.appendChild(opt);
+    });
+  }
+
+  // Rebuild workflow selector
+  const prevId = gadgetWfSelect.value;
+  gadgetWfSelect.replaceChildren();
+  const none = document.createElement("option");
+  none.value = "";
+  none.textContent = "(new workflow)";
+  gadgetWfSelect.appendChild(none);
+  gadgetWorkflows.forEach((wf) => {
+    const opt = document.createElement("option");
+    opt.value = wf.id;
+    opt.textContent = `${wf.name || wf.id} [${wf.block_count || 0}]`;
+    gadgetWfSelect.appendChild(opt);
+  });
+  if (prevId) gadgetWfSelect.value = prevId;
+
+  // Update active workflow ID from server
+  if (state.active_workflow_id) {
+    gadgetActiveWfId = state.active_workflow_id;
+    gadgetWfSelect.value = gadgetActiveWfId;
+  }
+
+  // If a workflow is selected and we have blocks, update block count
+  gadgetBlockCount.textContent = gadgetBlocks.length;
+  refreshGadgetSdList();
+  refreshGadgetLog();
+}
+
+// ------------------------------------------------------------------
+// Workflow selector
+// ------------------------------------------------------------------
+
+gadgetWfSelect.addEventListener("change", async () => {
+  const wid = gadgetWfSelect.value;
+  if (!wid) {
+    gadgetWfName.value = "";
+    gadgetBlocks = [];
+    renderGadgetBlockList([]);
+    return;
+  }
+  const resp = await apiPost("/api/gadget/workflow/get", { workflow_id: wid });
+  if (resp.workflow) {
+    gadgetActiveWfId = wid;
+    gadgetWfName.value = resp.workflow.name || "";
+    if (resp.workflow.trigger?.type) gadgetWfTrigger.value = resp.workflow.trigger.type;
+    gadgetBlocks = resp.workflow.blocks || [];
+    renderGadgetBlockList(gadgetBlocks);
+  }
+});
+
+// ------------------------------------------------------------------
+// Block summary helper
+// ------------------------------------------------------------------
+
+function gadgetBlockSummary(block) {
+  const t = block.type || "";
+  const p = block.params || {};
+  const schema = gadgetSchema.block_types?.[t];
+  if (t === "hid_type_text") return `TYPE: "${(p.text || "").substring(0, 24)}"`;
+  if (t === "hid_press_key") return `KEY: ${p.key || ""}`;
+  if (t === "hid_key_combo") return `COMBO: ${p.modifiers || ""}+${p.key || ""}`;
+  if (t === "delay") return `DELAY ${p.ms || 0}ms`;
+  if (t === "if_os") return `IF OS = ${(p.os || "").toUpperCase()}`;
+  if (t === "else_block") return "ELSE";
+  if (t === "end_if") return "END IF";
+  if (t === "loop_n") return `LOOP ×${p.count || 1}`;
+  if (t === "end_loop") return "END LOOP";
+  if (t === "stop_workflow") return "STOP";
+  if (t === "gadget_switch_hid") return "→ HID PROFILE";
+  if (t === "gadget_switch_serial") return "→ SERIAL PROFILE";
+  if (t === "gadget_switch_ethernet") return `→ ETHERNET (${p.mode || "rndis"})`;
+  if (t === "gadget_switch_composite") return `→ COMPOSITE (${p.functions || ""})`;
+  if (t === "net_provide_dhcp") return `DHCP on ${p.interface || "usb0"}`;
+  if (t === "serial_send_string") return `SERIAL: "${(p.text || "").substring(0, 24)}"`;
+  return schema ? schema.label.toUpperCase() : t.toUpperCase();
+}
+
+function renderGadgetBlockList(blocks) {
+  gadgetBlockCount.textContent = blocks.length;
+  gadgetBlockList.replaceChildren();
+  blocks.forEach((block, idx) => {
+    const row = document.createElement("div");
+    row.className = "rule-block" + (block.enabled !== false ? "" : " disabled");
+    row.dataset.id = block.id || idx;
+    row.innerHTML = `
+      <div class="rule-summary">
+        <span class="rule-name-label">${escHtml(gadgetBlockSummary(block))}</span>
+      </div>
+      <div class="rule-actions">
+        <button class="rule-toggle-${block.enabled !== false ? "on" : "off"}" data-action="toggle" data-idx="${idx}">${block.enabled !== false ? "ON" : "OFF"}</button>
+        <button data-action="up" data-idx="${idx}" ${idx === 0 ? "disabled" : ""}>▲</button>
+        <button data-action="down" data-idx="${idx}" ${idx === blocks.length - 1 ? "disabled" : ""}>▼</button>
+        <button class="danger" data-action="remove" data-idx="${idx}">✕</button>
+      </div>
+    `;
+    gadgetBlockList.appendChild(row);
+  });
+
+  gadgetBlockList.onclick = (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const idx = parseInt(btn.dataset.idx, 10);
+    handleGadgetBlockAction(action, idx);
+  };
+}
+
+function handleGadgetBlockAction(action, idx) {
+  if (idx < 0 || idx >= gadgetBlocks.length) return;
+  if (action === "toggle") {
+    gadgetBlocks[idx].enabled = !gadgetBlocks[idx].enabled;
+  } else if (action === "remove") {
+    gadgetBlocks.splice(idx, 1);
+  } else if (action === "up" && idx > 0) {
+    [gadgetBlocks[idx - 1], gadgetBlocks[idx]] = [gadgetBlocks[idx], gadgetBlocks[idx - 1]];
+  } else if (action === "down" && idx < gadgetBlocks.length - 1) {
+    [gadgetBlocks[idx], gadgetBlocks[idx + 1]] = [gadgetBlocks[idx + 1], gadgetBlocks[idx]];
+  }
+  renderGadgetBlockList(gadgetBlocks);
+}
+
+// ------------------------------------------------------------------
+// Block editor for Gadget Automation
+// ------------------------------------------------------------------
+
+function gbePopulateCategories() {
+  if (gbeCategory.options.length > 0) return;
+  const cats = gadgetSchema.block_categories || {};
+  Object.entries(cats).forEach(([id, cat]) => {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = (cat.label || id).toUpperCase();
+    gbeCategory.appendChild(opt);
+  });
+  gbeUpdateTypes();
+}
+
+function gbeUpdateTypes() {
+  gbeType.replaceChildren();
+  const cats = gadgetSchema.block_categories || {};
+  const types = cats[gbeCategory.value]?.types || [];
+  types.forEach((t) => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    const schema = gadgetSchema.block_types?.[t];
+    opt.textContent = schema ? schema.label.toUpperCase() : t.toUpperCase();
+    gbeType.appendChild(opt);
+  });
+  gbeUpdateParams();
+}
+
+function gbeUpdateParams() {
+  gbeParams.replaceChildren();
+  const schema = gadgetSchema.block_types?.[gbeType.value];
+  if (!schema) return;
+  (schema.params || []).forEach((pdef) => {
+    const row = document.createElement("div");
+    row.className = "editor-row";
+    const lbl = document.createElement("span");
+    lbl.className = "rule-kw";
+    lbl.textContent = pdef.label;
+    row.appendChild(lbl);
+
+    if (pdef.type === "textarea") {
+      const ta = document.createElement("textarea");
+      ta.dataset.key = pdef.key;
+      ta.className = "ed-input";
+      ta.rows = 3;
+      ta.style.resize = "vertical";
+      if (pdef.default !== undefined) ta.value = pdef.default;
+      row.appendChild(ta);
+    } else if (pdef.type === "checkbox") {
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.dataset.key = pdef.key;
+      cb.dataset.dtype = "bool";
+      if (pdef.default) cb.checked = true;
+      row.appendChild(cb);
+    } else if (pdef.type === "select") {
+      const sel = document.createElement("select");
+      sel.dataset.key = pdef.key;
+      sel.className = "ed-select";
+      (pdef.options || []).forEach((optVal) => {
+        const opt = document.createElement("option");
+        opt.value = optVal;
+        opt.textContent = optVal.toUpperCase();
+        sel.appendChild(opt);
+      });
+      if (pdef.default !== undefined) sel.value = pdef.default;
+      row.appendChild(sel);
+    } else {
+      const inp = document.createElement("input");
+      inp.type = pdef.type === "number" ? "number" : "text";
+      inp.dataset.key = pdef.key;
+      inp.className = "ed-input";
+      if (pdef.default !== undefined) inp.value = pdef.default;
+      row.appendChild(inp);
+    }
+    gbeParams.appendChild(row);
+  });
+}
+
+gbeCategory.addEventListener("change", gbeUpdateTypes);
+gbeType.addEventListener("change", gbeUpdateParams);
+
+function openGadgetBlockEditor() {
+  gbePopulateCategories();
+  gbeError.classList.add("hidden");
+  gadgetBlockEditor.classList.remove("hidden");
+}
+
+function closeGadgetBlockEditor() {
+  gadgetBlockEditor.classList.add("hidden");
+}
+
+gadgetAddBlockBtn.addEventListener("click", openGadgetBlockEditor);
+gbeCancel.addEventListener("click", closeGadgetBlockEditor);
+
+gbeSave.addEventListener("click", () => {
+  gbeError.classList.add("hidden");
+  const type = gbeType.value;
+  if (!type) { gbeError.textContent = "SELECT A BLOCK TYPE"; gbeError.classList.remove("hidden"); return; }
+  const params = {};
+  const schema = gadgetSchema.block_types?.[type];
+  gbeParams.querySelectorAll("[data-key]").forEach((el) => {
+    const k = el.dataset.key;
+    if (el.dataset.dtype === "bool") {
+      params[k] = el.checked;
+    } else if (el.type === "number") {
+      params[k] = parseFloat(el.value) || 0;
+    } else {
+      params[k] = el.value;
+    }
+  });
+  // Check required fields
+  if (schema) {
+    for (const pdef of schema.params || []) {
+      if (pdef.required && !params[pdef.key]) {
+        gbeError.textContent = `${pdef.label} IS REQUIRED`;
+        gbeError.classList.remove("hidden");
+        return;
+      }
+    }
+  }
+  gadgetBlocks.push({ type, enabled: true, params });
+  renderGadgetBlockList(gadgetBlocks);
+  closeGadgetBlockEditor();
+});
+
+// ------------------------------------------------------------------
+// Workflow save / new / delete
+// ------------------------------------------------------------------
+
+gadgetNewWfBtn.addEventListener("click", () => {
+  gadgetActiveWfId = null;
+  gadgetWfSelect.value = "";
+  gadgetWfName.value = "";
+  gadgetBlocks = [];
+  renderGadgetBlockList([]);
+});
+
+gadgetSaveWfBtn.addEventListener("click", async () => {
+  const name = gadgetWfName.value.trim() || "Unnamed Workflow";
+  const trigger = { type: gadgetWfTrigger.value || "manual", params: {} };
+  const workflow = {
+    id: gadgetActiveWfId || undefined,
+    name,
+    trigger,
+    blocks: gadgetBlocks,
+  };
+  const resp = await apiPost("/api/gadget/workflow/save", { workflow });
+  if (resp.status === "ok") {
+    gadgetActiveWfId = resp.workflow?.id || gadgetActiveWfId;
+    setOverlay("SAVED", resp.workflow);
+    refreshGadgetView();
+  } else {
+    setOverlay("ERROR", resp);
+  }
+});
+
+gadgetDelWfBtn.addEventListener("click", async () => {
+  if (!gadgetActiveWfId) return;
+  const resp = await apiPost("/api/gadget/workflow/delete", { workflow_id: gadgetActiveWfId });
+  if (resp.status === "ok") {
+    gadgetActiveWfId = null;
+    gadgetBlocks = [];
+    renderGadgetBlockList([]);
+    refreshGadgetView();
+  }
+});
+
+// ------------------------------------------------------------------
+// Run / Stop workflow
+// ------------------------------------------------------------------
+
+gadgetRunBtn.addEventListener("click", async () => {
+  if (!gadgetActiveWfId && gadgetBlocks.length === 0) return;
+  const params = {
+    detected_os: gadgetOsHint.value || "",
+  };
+  if (gadgetActiveWfId) {
+    params.workflow_id = gadgetActiveWfId;
+  } else {
+    // Run inline from current block list
+    params.workflow = {
+      name: gadgetWfName.value.trim() || "Inline",
+      trigger: { type: gadgetWfTrigger.value || "manual", params: {} },
+      blocks: gadgetBlocks,
+    };
+  }
+  const resp = await apiPost("/api/gadget/workflow/run", params);
+  setOverlay("RUN WORKFLOW", resp);
+  refreshGadgetView();
+});
+
+gadgetStopBtn.addEventListener("click", async () => {
+  const resp = await apiPost("/api/gadget/workflow/stop", {});
+  setOverlay("STOP", resp);
+  refreshGadgetView();
+});
+
+// ------------------------------------------------------------------
+// Gadget profile quick-switch
+// ------------------------------------------------------------------
+
+gadgetSwHid.addEventListener("click", async () => {
+  await apiPost("/api/gadget/workflow/run", {
+    workflow: {
+      name: "quick-hid",
+      trigger: { type: "manual", params: {} },
+      blocks: [{ type: "gadget_switch_hid", enabled: true, params: { mouse: true } }],
+    },
+  });
+  refreshGadgetView();
+});
+
+gadgetSwSerial.addEventListener("click", async () => {
+  await apiPost("/api/gadget/workflow/run", {
+    workflow: {
+      name: "quick-serial",
+      trigger: { type: "manual", params: {} },
+      blocks: [{ type: "gadget_switch_serial", enabled: true, params: {} }],
+    },
+  });
+  refreshGadgetView();
+});
+
+gadgetSwEth.addEventListener("click", async () => {
+  await apiPost("/api/gadget/workflow/run", {
+    workflow: {
+      name: "quick-ethernet",
+      trigger: { type: "manual", params: {} },
+      blocks: [{ type: "gadget_switch_ethernet", enabled: true, params: { mode: "rndis" } }],
+    },
+  });
+  refreshGadgetView();
+});
+
+gadgetSwComposite.addEventListener("click", async () => {
+  await apiPost("/api/gadget/workflow/run", {
+    workflow: {
+      name: "quick-composite",
+      trigger: { type: "manual", params: {} },
+      blocks: [{ type: "gadget_switch_composite", enabled: true, params: { functions: "hid,serial" } }],
+    },
+  });
+  refreshGadgetView();
+});
+
+gadgetTeardownBtn.addEventListener("click", async () => {
+  const resp = await apiPost("/api/gadget/teardown", {});
+  setOverlay("TEARDOWN", resp);
+  refreshGadgetView();
+});
+
+// ------------------------------------------------------------------
+// SD card workflow browser
+// ------------------------------------------------------------------
+
+async function refreshGadgetSdList() {
+  try {
+    const resp = await api("/api/gadget/sd/list");
+    const files = resp.files || [];
+    gadgetSdFile.replaceChildren();
+    if (!files.length) {
+      const opt = document.createElement("option");
+      opt.textContent = "(no workflow files)";
+      opt.disabled = true;
+      gadgetSdFile.appendChild(opt);
+      return;
+    }
+    files.forEach((f) => {
+      const opt = document.createElement("option");
+      opt.value = f.name;
+      opt.textContent = `${f.name} (${f.size}B)`;
+      gadgetSdFile.appendChild(opt);
+    });
+  } catch (_) {}
+}
+
+gadgetSdPreviewBtn.addEventListener("click", async () => {
+  const filename = gadgetSdFile.value;
+  if (!filename) return;
+  const resp = await apiPost("/api/gadget/sd/preview", { filename });
+  if (resp.status === "ok") {
+    gadgetSdPreviewBox.textContent =
+      `[${resp.block_count || 0} blocks]\n` +
+      resp.preview +
+      (resp.truncated ? "\n[TRUNCATED]" : "");
+    gadgetSdPreviewBox.classList.remove("hidden");
+  } else {
+    gadgetSdPreviewBox.textContent = resp.error || "PREVIEW FAILED";
+    gadgetSdPreviewBox.classList.remove("hidden");
+  }
+});
+
+gadgetSdImportBtn.addEventListener("click", async () => {
+  const filename = gadgetSdFile.value;
+  if (!filename) return;
+  const resp = await apiPost("/api/gadget/sd/import", { filename });
+  if (resp.status === "ok") {
+    const wf = resp.workflow;
+    gadgetActiveWfId = wf.id;
+    gadgetWfName.value = wf.name || "";
+    gadgetBlocks = wf.blocks || [];
+    renderGadgetBlockList(gadgetBlocks);
+    refreshGadgetView();
+  } else {
+    setOverlay("IMPORT ERROR", resp);
+  }
+});
+
+// ------------------------------------------------------------------
+// Export workflow to SD
+// ------------------------------------------------------------------
+
+gadgetExportBtn.addEventListener("click", () => {
+  gadgetExportFilename.value = (gadgetWfName.value.trim() || "workflow").replace(/\s+/g, "_") + ".workflow";
+  gadgetExportError.classList.add("hidden");
+  gadgetExportDialog.classList.remove("hidden");
+});
+
+gadgetExportCancel.addEventListener("click", () => gadgetExportDialog.classList.add("hidden"));
+
+gadgetExportConfirm.addEventListener("click", async () => {
+  const filename = gadgetExportFilename.value.trim();
+  if (!filename) {
+    gadgetExportError.textContent = "FILENAME REQUIRED";
+    gadgetExportError.classList.remove("hidden");
+    return;
+  }
+  if (!gadgetActiveWfId) {
+    gadgetExportError.textContent = "SAVE WORKFLOW FIRST";
+    gadgetExportError.classList.remove("hidden");
+    return;
+  }
+  const resp = await apiPost("/api/gadget/sd/export", {
+    workflow_id: gadgetActiveWfId,
+    filename,
+  });
+  gadgetExportDialog.classList.add("hidden");
+  setOverlay("EXPORT", resp);
+});
+
+// ------------------------------------------------------------------
+// Execution log
+// ------------------------------------------------------------------
+
+async function refreshGadgetLog() {
+  try {
+    const resp = await api("/api/gadget/logs");
+    const lines = resp.log || [];
+    gadgetLogBox.textContent = lines.length ? lines.join("\n") : "(no log)";
+  } catch (_) {}
+}
+
+gadgetLogRefreshBtn.addEventListener("click", refreshGadgetLog);
 

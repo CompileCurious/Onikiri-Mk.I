@@ -1,5 +1,6 @@
 from onikiri.modules.bluetooth_recon import BluetoothReconModule
 from onikiri.modules.engagement import EngagementModule
+from onikiri.modules.gadget_automation import GadgetAutomationModule
 from onikiri.modules.hid_gadget import HidGadgetModule
 from onikiri.modules.mitm import MitmModule
 from onikiri.modules.network_scanner import NetworkScannerModule
@@ -13,6 +14,7 @@ MODULE_TYPES = {
     "network_scanner": NetworkScannerModule,
     "bluetooth_recon": BluetoothReconModule,
     "hid_gadget": HidGadgetModule,
+    "gadget_automation": GadgetAutomationModule,
     "payload_builder": PayloadBuilderModule,
     "engagement": EngagementModule,
     "system_info": SystemInfoModule,
