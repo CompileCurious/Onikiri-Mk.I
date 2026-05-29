@@ -48,6 +48,7 @@ util-linux              # losetup, blkid, findmnt
 python3-asyncio         # (stdlib, included)
 python3-ipaddress       # (stdlib, included)
 python3-impacket        # SMB / NTLM recon helpers
+pyftpdlib               # FTP server for Toishi companion app (engagement export / payload transfer)
 python3-requests        # HTTP library (optional modules)
 
 # ── Build-time only (host, not target) ────────────────────────────────────────

@@ -45,6 +45,8 @@ class GadgetConfigFS:
                 await asyncio.to_thread(self._setup_ethernet, params)
             elif profile == "mass_storage":
                 await asyncio.to_thread(self._setup_mass_storage, params)
+            elif profile == "rndis":
+                await asyncio.to_thread(self._setup_rndis)
             elif profile == "composite":
                 await asyncio.to_thread(self._setup_composite, params)
             elif profile == "custom":
@@ -267,6 +269,19 @@ class GadgetConfigFS:
         self._w(lun / "removable", "1")
         self._w(lun / "ro", "1" if read_only else "0")
         return fn_path
+
+    def _setup_rndis(self) -> None:
+        """Stand-alone RNDIS gadget for Toishi companion connectivity.
+        Configures usb0 at 192.168.7.1/24 and hands Windows a DHCP address
+        so Toishi can reach Onikiri's HTTP bridge (port 8171) and FTP (port 2121).
+        """
+        self._setup_ethernet({"mode": "rndis"})
+        self._start_dhcp({
+            "interface": "usb0",
+            "gateway": "192.168.7.1",
+            "range_start": "192.168.7.2",
+            "range_end": "192.168.7.10",
+        })
 
     def _setup_mass_storage(self, params: Dict[str, Any]) -> None:
         self._teardown()

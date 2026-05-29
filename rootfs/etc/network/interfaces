@@ -3,3 +3,9 @@ iface lo inet loopback
 
 auto wlan0
 iface wlan0 inet dhcp
+
+# RNDIS USB gadget — Toishi companion app connects to Onikiri at 192.168.7.1
+auto usb0
+iface usb0 inet static
+  address 192.168.7.1
+  netmask 255.255.255.0

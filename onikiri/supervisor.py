@@ -130,6 +130,16 @@ class Supervisor:
             module_action = action[len("gadget_auto_"):]  # strip "gadget_auto_" prefix
             params = {k: v for k, v in request.items() if k != "action"}
             return await mod.execute(module_action, params, self.context)
+        # ------------------------------------------------------------------
+        # Engagement Export direct actions
+        # ------------------------------------------------------------------
+        if action.startswith("engagement_export_"):
+            mod = self.modules.get("engagement_export")
+            if mod is None:
+                return {"status": "error", "error": "engagement_export module not loaded"}
+            module_action = action[len("engagement_export_"):]  # strip prefix
+            params = {k: v for k, v in request.items() if k != "action"}
+            return await mod.execute(module_action, params, self.context)
         raise KeyError(f"unsupported action: {action}")
 
     def wipe_engagement_data(self) -> list[str]:

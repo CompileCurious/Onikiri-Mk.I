@@ -1,5 +1,6 @@
 from onikiri.modules.bluetooth_recon import BluetoothReconModule
 from onikiri.modules.engagement import EngagementModule
+from onikiri.modules.engagement_export import EngagementExportModule
 from onikiri.modules.gadget_automation import GadgetAutomationModule
 from onikiri.modules.hid_gadget import HidGadgetModule
 from onikiri.modules.mitm import MitmModule
@@ -17,5 +18,6 @@ MODULE_TYPES = {
     "gadget_automation": GadgetAutomationModule,
     "payload_builder": PayloadBuilderModule,
     "engagement": EngagementModule,
+    "engagement_export": EngagementExportModule,
     "system_info": SystemInfoModule,
 }

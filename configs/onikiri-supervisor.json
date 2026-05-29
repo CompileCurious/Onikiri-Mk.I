@@ -13,8 +13,15 @@
   "hid_payload_dir": "/userdata/captures/payloads",
   "gadget_workflow_path": "/userdata/gadget/workflows.json",
   "sd_mount": "/mnt/sd",
+  "ftp": {
+    "listen": "0.0.0.0",
+    "port": 2121,
+    "user": "onikiri",
+    "password": "onikiri",
+    "root": "/userdata"
+  },
   "ui": {
-    "listen": "127.0.0.1",
+    "listen": "0.0.0.0",
     "port": 8171,
     "kiosk_command": [
       "/usr/bin/cog",
@@ -31,6 +38,7 @@
     "gadget_automation",
     "payload_builder",
     "engagement",
+    "engagement_export",
     "system_info"
   ]
 }

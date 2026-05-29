@@ -140,6 +140,10 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             response = self.state.request("gadget_auto_payload_list")
             self.respond(response)
             return
+        if parsed.path == "/api/engagement/list":
+            response = self.state.request("engagement_export_list")
+            self.respond(response)
+            return
         if parsed.path == "/":
             self.path = "/index.html"
         super().do_GET()
@@ -337,6 +341,14 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             response = self.state.request("gadget_auto_payload_clear")
             self.respond(response)
             return
+        if parsed.path == "/api/engagement/pack":
+            response = self.state.request("engagement_export_pack", **payload)
+            self.respond(response)
+            return
+        if parsed.path == "/api/engagement/delete":
+            response = self.state.request("engagement_export_delete", **payload)
+            self.respond(response)
+            return
         if parsed.path == "/api/stop_module":
             label = payload.get("label", "")
             _STOP_MAP: Dict[str, str] = {
@@ -368,11 +380,13 @@ class BridgeHandler(SimpleHTTPRequestHandler):
 
 
 def serve(socket_path: str, config: Dict[str, Any]) -> None:
+    from onikiri.ftp_server import start_ftp_server
     listen = config["ui"]["listen"]
     port = int(config["ui"]["port"])
     state = BridgeState(socket_path=socket_path, config=config)
     handler = type("OnikiriBridgeHandler", (BridgeHandler,), {"state": state})
     server = ThreadingHTTPServer((listen, port), handler)
+    start_ftp_server(config)
     kiosk_command = config["ui"].get("kiosk_command") or []
     kiosk_process: subprocess.Popen[Any] | None = None
     try:
