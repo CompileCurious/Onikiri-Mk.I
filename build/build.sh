@@ -303,35 +303,31 @@ install_target_packages() {
 
     mkdir -p "${ROOTFS_STAGE}"
 
-    # ── Package list ──────────────────────────────────────────────────────────
-    # busybox-static is the ARM64 static busybox we need for /bin/busybox.
-    # python3 + pip + dev are needed for supervisor, modules, and Kivy build.
-    # SDL2 runtime + graphics libs are needed by Kivy KMS/DRM window backend.
-    local INCLUDE
-    INCLUDE=$(printf '%s,' \
+    # ── Phase 1: debootstrap (only packages whose postinst is chroot-safe) ────
+    # Packages with daemon postinst scripts (bluez, wpasupplicant, nmap, etc.)
+    # are excluded here and installed in Phase 2 with service-start blocked.
+    local DEBOOTSTRAP_INCLUDE
+    DEBOOTSTRAP_INCLUDE=$(printf '%s,' \
         busybox-static \
         python3 python3-pip python3-dev python3-venv \
         cython3 \
-        iw wireless-tools wpasupplicant \
         e2fsprogs kmod util-linux \
         iproute2 net-tools curl wget ca-certificates \
-        bluez \
-        iptables procps \
-        nmap socat \
-        libsdl2-2.0-0 libsdl2-dev \
+        iptables procps socat \
+        iw wireless-tools \
+        libsdl2-2.0-0 \
         libsdl2-image-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 \
         libgl1 libgles2 libgbm1 libdrm2 libglvnd0 \
         libinput10 libudev1 \
         libmtdev1 libxkbcommon0 \
     )
-    INCLUDE="${INCLUDE%,}"
+    DEBOOTSTRAP_INCLUDE="${DEBOOTSTRAP_INCLUDE%,}"
 
-    # ── Debootstrap first stage ───────────────────────────────────────────────
     log "  debootstrap first stage (Debian ${DEBOOTSTRAP_SUITE} arm64)"
     debootstrap \
         --arch=arm64 \
         --variant=minbase \
-        --include="${INCLUDE}" \
+        --include="${DEBOOTSTRAP_INCLUDE}" \
         --foreign \
         "${DEBOOTSTRAP_SUITE}" \
         "${ROOTFS_STAGE}" \
@@ -348,10 +344,10 @@ install_target_packages() {
     cp /usr/bin/qemu-aarch64-static "${ROOTFS_STAGE}/usr/bin/"
 
     # Mount pseudo-filesystems needed by the second stage and pip
-    mount -t proc     proc                    "${ROOTFS_STAGE}/proc"
-    mount -t sysfs    sysfs                   "${ROOTFS_STAGE}/sys"
-    mount --bind      /dev                    "${ROOTFS_STAGE}/dev"
-    mount --bind      /dev/pts                "${ROOTFS_STAGE}/dev/pts"
+    mount -t proc  proc             "${ROOTFS_STAGE}/proc"
+    mount -t sysfs sysfs            "${ROOTFS_STAGE}/sys"
+    mount --bind   /dev             "${ROOTFS_STAGE}/dev"
+    mount --bind   /dev/pts         "${ROOTFS_STAGE}/dev/pts"
 
     _chroot_unmount() {
         umount -l "${ROOTFS_STAGE}/dev/pts" 2>/dev/null || true
@@ -360,7 +356,6 @@ install_target_packages() {
         umount -l "${ROOTFS_STAGE}/proc"    2>/dev/null || true
     }
 
-    # ── Debootstrap second stage ──────────────────────────────────────────────
     log "  debootstrap second stage (inside ARM64 chroot via qemu)"
     if ! chroot "${ROOTFS_STAGE}" /debootstrap/debootstrap --second-stage \
             2>&1 | tee -a "${BUILD_DIR}/debootstrap.log"; then
@@ -370,7 +365,32 @@ install_target_packages() {
         die "debootstrap second stage failed"
     fi
 
-    # ── Python packages ───────────────────────────────────────────────────────
+    # ── Phase 2: daemon packages — block service starts with policy-rc.d ──────
+    # bluez, wpasupplicant, nmap run dbus/wpa-supplicant/nmap-service in postinst.
+    # policy-rc.d returning 101 makes invoke-rc.d skip start/restart silently.
+    cat > "${ROOTFS_STAGE}/usr/sbin/policy-rc.d" <<'EOF'
+#!/bin/sh
+exit 101
+EOF
+    chmod +x "${ROOTFS_STAGE}/usr/sbin/policy-rc.d"
+
+    log "  installing daemon packages (bluez, wpasupplicant, nmap, libsdl2-dev)"
+    DEBIAN_FRONTEND=noninteractive chroot "${ROOTFS_STAGE}" \
+        apt-get install -y --no-install-recommends \
+            bluez \
+            wpasupplicant \
+            nmap \
+            libsdl2-dev \
+        2>&1 | tee "${BUILD_DIR}/apt-daemon-pkgs.log" || {
+        _chroot_unmount
+        log "daemon package install failed — last 30 lines:"
+        tail -30 "${BUILD_DIR}/apt-daemon-pkgs.log" >&2
+        die "daemon package install failed"
+    }
+
+    rm -f "${ROOTFS_STAGE}/usr/sbin/policy-rc.d"
+
+    # ── Phase 3: Python packages ──────────────────────────────────────────────
     log "  installing Python packages (kivy, scapy, pyftpdlib, ...)"
     if ! chroot "${ROOTFS_STAGE}" \
             pip3 install --break-system-packages --no-cache-dir \
