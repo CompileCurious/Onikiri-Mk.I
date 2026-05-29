@@ -50,7 +50,7 @@ if ! [ -b "${BOOT_DEV}" ]; then
 fi
 
 mkdir -p "${BOOT_MNT}"
-if ! mount -t vfat "${BOOT_DEV}" "${BOOT_MNT}" -o ro,noatime 2>/dev/null; then
+if ! mount -t vfat "${BOOT_DEV}" "${BOOT_MNT}" -o rw,noatime 2>/dev/null; then
     log "Could not mount ${BOOT_DEV} — skipping boot-partition import"
     exit 0
 fi
@@ -111,13 +111,11 @@ fi
 
 # ── Kernel diagnostic log ────────────────────────────────────────────────────
 # Write dmesg to the FAT partition so it can be read on any PC (Windows sees
-# this partition as drive ONIKIRI).  Remount rw just for the write, then ro.
-mount -o remount,rw "${BOOT_MNT}" 2>/dev/null && {
-    dmesg > "${BOOT_MNT}/dmesg.txt" 2>/dev/null || true
+# this partition as drive ONIKIRI).  Partition is already mounted rw above.
+dmesg > "${BOOT_MNT}/dmesg.txt" 2>/dev/null && {
     sync
-    mount -o remount,ro "${BOOT_MNT}" 2>/dev/null || true
     log "dmesg.txt written to boot partition"
-} || log "WARNING: could not remount rw — dmesg.txt not written"
+} || log "WARNING: dmesg write failed"
 
 umount "${BOOT_MNT}" 2>/dev/null || true
 
