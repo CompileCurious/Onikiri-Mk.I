@@ -82,7 +82,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out/rootfs_stage.tar.gz
-          key: rootfs-bookworm-arm64-v2
+          key: rootfs-bookworm-arm64-v3
 
       - name: Extract rootfs cache
         if: steps.rootfs-cache.outputs.cache-hit == 'true'

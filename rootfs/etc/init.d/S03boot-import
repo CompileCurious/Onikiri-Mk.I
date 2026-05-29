@@ -109,6 +109,16 @@ if [ -d "${BOOT_MNT}/config" ]; then
     done
 fi
 
+# ── Kernel diagnostic log ────────────────────────────────────────────────────
+# Write dmesg to the FAT partition so it can be read on any PC (Windows sees
+# this partition as drive ONIKIRI).  Remount rw just for the write, then ro.
+mount -o remount,rw "${BOOT_MNT}" 2>/dev/null && {
+    dmesg > "${BOOT_MNT}/dmesg.txt" 2>/dev/null || true
+    sync
+    mount -o remount,ro "${BOOT_MNT}" 2>/dev/null || true
+    log "dmesg.txt written to boot partition"
+} || log "WARNING: could not remount rw — dmesg.txt not written"
+
 umount "${BOOT_MNT}" 2>/dev/null || true
 
 if [ "${imported}" -gt 0 ]; then

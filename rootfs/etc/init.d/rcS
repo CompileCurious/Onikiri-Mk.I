@@ -75,16 +75,6 @@ if [ -f /var/lib/urandom/seed ]; then
     cat /var/lib/urandom/seed > /dev/urandom
 fi
 
-# ── Save kernel log to FAT boot partition for offline diagnosis ───────────────
-# After boot, mount the SD card on any PC and read /dmesg.txt to see
-# exactly which DRM/clock/regulator drivers probed or failed.
-mkdir -p /mnt/_diag
-if mount -t vfat /dev/mmcblk0p1 /mnt/_diag -o rw,noatime 2>/dev/null; then
-    dmesg > /mnt/_diag/dmesg.txt 2>/dev/null || true
-    umount /mnt/_diag 2>/dev/null || true
-fi
-rmdir /mnt/_diag 2>/dev/null || true
-
 # ── Create runtime directories ────────────────────────────────────────────────
 mkdir -p /run/onikiri
 mkdir -p /run/lock
