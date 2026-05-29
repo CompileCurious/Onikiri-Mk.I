@@ -396,6 +396,7 @@ main() {
         fi
         assemble_rootfs
         build_squashfs
+        build_initramfs
     fi
 
     if [[ "${OPT_KERNEL_ONLY}" -eq 0 ]]; then

@@ -31,6 +31,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 KERNEL=""
 DTB=""
+INITRAMFS=""
 ROOTFS=""
 OUTPUT=""
 
@@ -42,18 +43,20 @@ fi
 # ── Argument parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --kernel) KERNEL="$2"; shift 2 ;;
-        --dtb)    DTB="$2";    shift 2 ;;
-        --rootfs) ROOTFS="$2"; shift 2 ;;
-        --output) OUTPUT="$2"; shift 2 ;;
+        --kernel)     KERNEL="$2";     shift 2 ;;
+        --dtb)        DTB="$2";        shift 2 ;;
+        --initramfs)  INITRAMFS="$2";  shift 2 ;;
+        --rootfs)     ROOTFS="$2";     shift 2 ;;
+        --output)     OUTPUT="$2";     shift 2 ;;
         *) echo "Unknown: $1" >&2; exit 1 ;;
     esac
 done
 
-[[ -n "${KERNEL}" ]] || { echo "Missing --kernel" >&2; exit 1; }
-[[ -n "${DTB}"    ]] || { echo "Missing --dtb"    >&2; exit 1; }
-[[ -n "${ROOTFS}" ]] || { echo "Missing --rootfs" >&2; exit 1; }
-[[ -n "${OUTPUT}" ]] || { echo "Missing --output" >&2; exit 1; }
+[[ -n "${KERNEL}"    ]] || { echo "Missing --kernel"    >&2; exit 1; }
+[[ -n "${DTB}"       ]] || { echo "Missing --dtb"       >&2; exit 1; }
+[[ -n "${INITRAMFS}" ]] || { echo "Missing --initramfs" >&2; exit 1; }
+[[ -n "${ROOTFS}"    ]] || { echo "Missing --rootfs"    >&2; exit 1; }
+[[ -n "${OUTPUT}"    ]] || { echo "Missing --output"    >&2; exit 1; }
 
 # ── Sector arithmetic (512-byte sectors) ──────────────────────────────────────
 # Image contains ONLY p1 + p2.  p3 is declared in the partition table
@@ -135,6 +138,7 @@ mount "${BOOT_DEV}" "${TMP_BOOT}"
 
 install -m644 "${KERNEL}" "${TMP_BOOT}/Image"
 install -m644 "${DTB}"    "${TMP_BOOT}/sun50i-h616-onikiri.dtb"
+install -m644 "${INITRAMFS}" "${TMP_BOOT}/initramfs.cpio.gz"
 
 if command -v mkimage >/dev/null 2>&1; then
     mkimage -C none -A arm64 -T script -d \
