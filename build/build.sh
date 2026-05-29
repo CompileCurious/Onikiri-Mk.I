@@ -38,6 +38,9 @@ KERNEL_TAG="v6.6.30"
 UBOOT_REPO="https://github.com/u-boot/u-boot.git"
 UBOOT_TAG="v2024.10"         # bigtreetech_cb1_defconfig merged ~Aug 2024; v2024.10 is first quarterly release with it
 
+DEBOOTSTRAP_SUITE="bookworm"
+DEBOOTSTRAP_MIRROR="http://deb.debian.org/debian"
+
 ATF_REPO="https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git"
 ATF_TAG="v2.10.0"            # LTS release; produces bl31.bin for sun50i_h616
 
@@ -75,6 +78,8 @@ check_deps() {
     require_tool mkfs.ext4
     require_tool dd
     require_tool python3
+    require_tool debootstrap
+    require_tool qemu-aarch64-static
 }
 
 # ── ARM Trusted Firmware (ATF) build ─────────────────────────────────────────────────────
@@ -284,22 +289,128 @@ build_rtl8821cs() {
         "${ROOTFS_STAGE}/lib/modules/${KVER_DIR}/kernel/drivers/net/wireless/88x2cs.ko"
 }
 
+# ── ARM64 target package installation (debootstrap + pip) ────────────────────
+# Produces a minimal Debian bookworm ARM64 base with Python3, system tools,
+# Kivy/SDL2, and all Onikiri Python dependencies baked in.
+# Runs only once per build; delete out/rootfs_stage to force a rebuild.
+install_target_packages() {
+    log "Installing ARM64 target packages (Debian ${DEBOOTSTRAP_SUITE})"
+
+    if [[ -f "${ROOTFS_STAGE}/etc/debian_version" ]]; then
+        log "  rootfs already bootstrapped — skipping (delete ${ROOTFS_STAGE} to redo)"
+        return 0
+    fi
+
+    mkdir -p "${ROOTFS_STAGE}"
+
+    # ── Package list ──────────────────────────────────────────────────────────
+    # busybox-static is the ARM64 static busybox we need for /bin/busybox.
+    # python3 + pip + dev are needed for supervisor, modules, and Kivy build.
+    # SDL2 runtime + graphics libs are needed by Kivy KMS/DRM window backend.
+    local INCLUDE
+    INCLUDE=$(printf '%s,' \
+        busybox-static \
+        python3 python3-pip python3-dev python3-venv \
+        cython3 \
+        iw wireless-tools wpasupplicant \
+        e2fsprogs kmod util-linux \
+        iproute2 net-tools curl wget ca-certificates \
+        bluez \
+        iptables procps \
+        nmap socat \
+        libsdl2-2.0-0 libsdl2-dev \
+        libsdl2-image-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 \
+        libgl1 libgles2 libgbm1 libdrm2 libglvnd0 \
+        libinput10 libudev1 \
+        libmtdev1 libxkbcommon0 \
+    )
+    INCLUDE="${INCLUDE%,}"
+
+    # ── Debootstrap first stage ───────────────────────────────────────────────
+    log "  debootstrap first stage (Debian ${DEBOOTSTRAP_SUITE} arm64)"
+    debootstrap \
+        --arch=arm64 \
+        --variant=minbase \
+        --include="${INCLUDE}" \
+        --foreign \
+        "${DEBOOTSTRAP_SUITE}" \
+        "${ROOTFS_STAGE}" \
+        "${DEBOOTSTRAP_MIRROR}" \
+        2>&1 | tee "${BUILD_DIR}/debootstrap.log"
+
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        log "debootstrap first stage failed — last 40 lines:"
+        tail -40 "${BUILD_DIR}/debootstrap.log" >&2
+        die "debootstrap first stage failed"
+    fi
+
+    # Copy QEMU static binary so the ARM64 rootfs can execute inside chroot
+    cp /usr/bin/qemu-aarch64-static "${ROOTFS_STAGE}/usr/bin/"
+
+    # Mount pseudo-filesystems needed by the second stage and pip
+    mount -t proc     proc                    "${ROOTFS_STAGE}/proc"
+    mount -t sysfs    sysfs                   "${ROOTFS_STAGE}/sys"
+    mount --bind      /dev                    "${ROOTFS_STAGE}/dev"
+    mount --bind      /dev/pts                "${ROOTFS_STAGE}/dev/pts"
+
+    _chroot_unmount() {
+        umount -l "${ROOTFS_STAGE}/dev/pts" 2>/dev/null || true
+        umount -l "${ROOTFS_STAGE}/dev"     2>/dev/null || true
+        umount -l "${ROOTFS_STAGE}/sys"     2>/dev/null || true
+        umount -l "${ROOTFS_STAGE}/proc"    2>/dev/null || true
+    }
+
+    # ── Debootstrap second stage ──────────────────────────────────────────────
+    log "  debootstrap second stage (inside ARM64 chroot via qemu)"
+    if ! chroot "${ROOTFS_STAGE}" /debootstrap/debootstrap --second-stage \
+            2>&1 | tee -a "${BUILD_DIR}/debootstrap.log"; then
+        _chroot_unmount
+        log "debootstrap second stage failed — last 40 lines:"
+        tail -40 "${BUILD_DIR}/debootstrap.log" >&2
+        die "debootstrap second stage failed"
+    fi
+
+    # ── Python packages ───────────────────────────────────────────────────────
+    log "  installing Python packages (kivy, scapy, pyftpdlib, ...)"
+    if ! chroot "${ROOTFS_STAGE}" \
+            pip3 install --break-system-packages --no-cache-dir \
+                "kivy[base]>=2.3.0" \
+                scapy \
+                pyftpdlib \
+                requests \
+                impacket \
+            2>&1 | tee "${BUILD_DIR}/pip-install.log"; then
+        _chroot_unmount
+        log "pip install failed — last 30 lines:"
+        tail -30 "${BUILD_DIR}/pip-install.log" >&2
+        die "pip install failed"
+    fi
+
+    _chroot_unmount
+
+    # ── Remove QEMU binary — not for the target ───────────────────────────────
+    rm -f "${ROOTFS_STAGE}/usr/bin/qemu-aarch64-static"
+
+    # ── Trim SquashFS footprint ───────────────────────────────────────────────
+    rm -rf "${ROOTFS_STAGE}/var/cache/apt/archives/"
+    rm -rf "${ROOTFS_STAGE}/var/lib/apt/lists/"*
+    rm -rf "${ROOTFS_STAGE}/debootstrap"
+    rm -rf "${ROOTFS_STAGE}/usr/share/doc/"
+    rm -rf "${ROOTFS_STAGE}/usr/share/man/"
+    rm -rf "${ROOTFS_STAGE}/usr/share/locale/"
+
+    log "  ARM64 target packages installed"
+}
+
 # ── Root filesystem assembly ───────────────────────────────────────────────────
 assemble_rootfs() {
     log "Assembling root filesystem"
-    mkdir -p "${ROOTFS_STAGE}"
 
-    # ── BusyBox install (pre-built static binary or cross-compiled) ───────────
-    if command -v busybox >/dev/null 2>&1; then
-        BUSYBOX_BIN=$(command -v busybox)
-    else
-        die "busybox not found — install busybox-static or cross-compile it"
-    fi
+    # ── Bootstrap ARM64 base system (Python3, system tools, Kivy, etc.) ───────
+    install_target_packages
 
-    # Essential directory tree
-    for d in bin sbin usr/bin usr/sbin lib etc etc/init.d proc sys dev run tmp \
-              userdata \
-              mnt/boot \
+    # ── Ensure required directories exist ─────────────────────────────────────
+    for d in etc/init.d mnt/boot run tmp userdata \
               usr/local/onikiri/supervisor \
               usr/local/onikiri/modules \
               usr/local/onikiri/ui \
@@ -308,19 +419,19 @@ assemble_rootfs() {
         mkdir -p "${ROOTFS_STAGE}/${d}"
     done
 
-    # BusyBox symlinks
-    install -m755 "${BUSYBOX_BIN}" "${ROOTFS_STAGE}/bin/busybox"
-    "${BUSYBOX_BIN}" --list | while read -r applet; do
+    # ── BusyBox symlinks (ARM64 busybox-static from debootstrap) ─────────────
+    # Use the host busybox's applet list to create symlinks — the applet names
+    # are identical across architectures.  The target binary is ARM64.
+    local BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox"
+    [[ -x "${BUSYBOX_ARM64}" ]] || die "ARM64 busybox not found at ${BUSYBOX_ARM64} — debootstrap may have failed"
+
+    busybox --list | while read -r applet; do
         ln -sf /bin/busybox "${ROOTFS_STAGE}/bin/${applet}" 2>/dev/null || true
     done
+    # BusyBox init — replaces Debian's init/sysvinit
     ln -sf /bin/busybox "${ROOTFS_STAGE}/sbin/init"
 
-    # Python 3 (host python is not suitable; this step requires a sysroot)
-    # In a real build, use buildroot or crosstool-ng to provide python3.
-    log "  [NOTE] Python3 ARM64 binary must be installed from your sysroot."
-    log "         See build/packages.list for required packages."
-
-    # Copy init scripts
+    # ── Init scripts and config ────────────────────────────────────────────────
     install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcS"              "${ROOTFS_STAGE}/etc/init.d/rcS"
     install -m755 "${REPO_ROOT}/rootfs/etc/init.d/rcK"              "${ROOTFS_STAGE}/etc/init.d/rcK"
     install -m755 "${REPO_ROOT}/rootfs/etc/init.d/S03boot-import"   "${ROOTFS_STAGE}/etc/init.d/S03boot-import"
@@ -331,20 +442,20 @@ assemble_rootfs() {
     install -m644 "${REPO_ROOT}/rootfs/etc/hostname"                "${ROOTFS_STAGE}/etc/hostname"
     install -m644 "${REPO_ROOT}/rootfs/etc/hosts"                   "${ROOTFS_STAGE}/etc/hosts"
 
-    # Boot hardware check banner
+    # ── Boot hardware check banner ─────────────────────────────────────────────
     install -m755 "${REPO_ROOT}/system/init/boot-check.sh" \
         "${ROOTFS_STAGE}/usr/local/onikiri/boot-check.sh"
 
-    # Copy supervisor + modules + UI
+    # ── Onikiri application code ───────────────────────────────────────────────
+    cp -r "${REPO_ROOT}/onikiri/."    "${ROOTFS_STAGE}/usr/local/onikiri/"
     cp -r "${REPO_ROOT}/supervisor/." "${ROOTFS_STAGE}/usr/local/onikiri/supervisor/"
     cp -r "${REPO_ROOT}/modules/."    "${ROOTFS_STAGE}/usr/local/onikiri/modules/"
     cp -r "${REPO_ROOT}/ui/."         "${ROOTFS_STAGE}/usr/local/onikiri/ui/"
+    cp -r "${REPO_ROOT}/configs/."    "${ROOTFS_STAGE}/usr/local/onikiri/configs/"
 
-    # Start script
+    # ── Start script and config ────────────────────────────────────────────────
     install -m755 "${REPO_ROOT}/rootfs/usr/local/onikiri/bin/start-supervisor.sh" \
         "${ROOTFS_STAGE}/usr/local/onikiri/bin/start-supervisor.sh"
-
-    # System config
     install -m644 "${REPO_ROOT}/config/onikiri.conf" \
         "${ROOTFS_STAGE}/etc/onikiri.conf"
 
@@ -363,14 +474,41 @@ build_squashfs() {
     log "SquashFS: $(du -h "${SQUASHFS_IMG}" | cut -f1)"
 }
 
+# ── Initramfs ─────────────────────────────────────────────────────────────────
+build_initramfs() {
+    log "Building initramfs"
+    INITRAMFS_STAGE="${BUILD_DIR}/initramfs_stage"
+    INITRAMFS_IMG="${BUILD_DIR}/initramfs.cpio.gz"
+
+    rm -rf "${INITRAMFS_STAGE}"
+    mkdir -p "${INITRAMFS_STAGE}"/{bin,sbin,usr/bin,usr/sbin,lib,proc,sys,dev,run,tmp,newroot}
+
+    # Use the ARM64 busybox-static from the rootfs_stage — the initramfs runs
+    # on the target hardware, so the binary must be ARM64, not the host x86_64.
+    local BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox"
+    [[ -x "${BUSYBOX_ARM64}" ]] || die "ARM64 busybox not found in rootfs_stage — run assemble_rootfs first"
+    install -m755 "${BUSYBOX_ARM64}" "${INITRAMFS_STAGE}/bin/busybox"
+    for applet in sh mount umount switch_root; do
+        ln -sf /bin/busybox "${INITRAMFS_STAGE}/bin/${applet}"
+    done
+    ln -sf /bin/busybox "${INITRAMFS_STAGE}/sbin/switch_root"
+
+    install -m755 "${REPO_ROOT}/boot/initramfs/init" "${INITRAMFS_STAGE}/init"
+
+    ( cd "${INITRAMFS_STAGE}" && find . | cpio -H newc -o --quiet ) \
+        | gzip -9 > "${INITRAMFS_IMG}"
+    log "Initramfs: $(du -h "${INITRAMFS_IMG}" | cut -f1)"
+}
+
 # ── microSD image ─────────────────────────────────────────────────────────────
 build_image() {
     log "Building microSD image: ${FINAL_IMG}"
     "${REPO_ROOT}/build/mkimage.sh" \
-        --kernel "${KERNEL_SRC}/arch/arm64/boot/Image" \
-        --dtb    "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb" \
-        --rootfs "${SQUASHFS_IMG}" \
-        --output "${FINAL_IMG}"
+        --kernel    "${KERNEL_SRC}/arch/arm64/boot/Image" \
+        --dtb       "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb" \
+        --initramfs "${BUILD_DIR}/initramfs.cpio.gz" \
+        --rootfs    "${SQUASHFS_IMG}" \
+        --output    "${FINAL_IMG}"
     log "Image ready: ${FINAL_IMG}"
     log "  Flash with: balenaEtcher or  dd if=${FINAL_IMG} of=/dev/sdX bs=4M status=progress"
 }
