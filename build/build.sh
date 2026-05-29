@@ -36,7 +36,7 @@ KERNEL_REPO="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
 KERNEL_TAG="v6.6.30"
 
 UBOOT_REPO="https://github.com/u-boot/u-boot.git"
-UBOOT_TAG="v2024.04"
+UBOOT_TAG="v2025.01"         # bigtreetech_cb1_defconfig merged after v2024.04
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 OPT_CLEAN=0
@@ -85,10 +85,18 @@ build_uboot() {
             "${UBOOT_REPO}" "${UBOOT_SRC}"
     fi
 
+    # bigtreetech_cb1_defconfig was merged after v2024.04; fall back to the
+    # generic H616 config if the board-specific one isn't present.
+    local DEFCONFIG="bigtreetech_cb1_defconfig"
+    if [[ ! -f "${UBOOT_SRC}/configs/${DEFCONFIG}" ]]; then
+        log "[WARN] ${DEFCONFIG} not found — falling back to sun50i_h616_defconfig"
+        DEFCONFIG="sun50i_h616_defconfig"
+    fi
+
     make -C "${UBOOT_SRC}" \
         ARCH="${ARCH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
-        bigtreetech_cb1_defconfig
+        "${DEFCONFIG}"
 
     make -C "${UBOOT_SRC}" \
         ARCH="${ARCH}" \
