@@ -114,13 +114,17 @@ build_uboot() {
     fi
     log "Using U-Boot defconfig: ${DEFCONFIG}"
 
+    # NOTE: U-Boot uses ARCH=arm for all ARM boards, including 64-bit ones.
+    # arm64 support is enabled via CONFIG_ARM64=y inside the defconfig.
+    # Using ARCH=arm64 (the Linux kernel name) breaks U-Boot's build system
+    # because arch/arm64/ does not exist in the U-Boot tree.
     make -C "${UBOOT_SRC}" \
-        ARCH="${ARCH}" \
+        ARCH=arm \
         CROSS_COMPILE="${CROSS_COMPILE}" \
         "${DEFCONFIG}"
 
     make -C "${UBOOT_SRC}" \
-        ARCH="${ARCH}" \
+        ARCH=arm \
         CROSS_COMPILE="${CROSS_COMPILE}" \
         -j"${JOBS}" \
         2>&1 | tee "${BUILD_DIR}/uboot-build.log"
