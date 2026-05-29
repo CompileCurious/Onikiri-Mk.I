@@ -8,15 +8,18 @@
 #   4. Boot via booti
 
 # ── Display / environment ─────────────────────────────────────────────────────
-setenv bootargs "console=tty1 console=ttyS0,115200n8 \
+# UART first so /dev/console resolves there; tty1 (framebuffer) gets all
+# messages too via the multi-console path. ignore_loglevel ensures kernel
+# messages appear on screen during bring-up.
+setenv bootargs "console=ttyS0,115200n8 console=tty1 \
 root=/dev/ram0 rdinit=/init rofs_device=/dev/mmcblk0p2 \
-loglevel=4 \
+loglevel=7 ignore_loglevel \
 fbcon=map:0 drm.debug=0 \
 zswap.enabled=1 zswap.compressor=lz4 \
 usbcore.autosuspend=-1 \
 coherent_pool=2M \
 cma=32M \
-panic=-1"
+panic=10"
 
 # ── Load kernel, initramfs and DTB from FAT boot partition (mmcblk0p1) ───────────────
 mmc dev 0

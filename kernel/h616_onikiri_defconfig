@@ -92,12 +92,26 @@ CONFIG_DRM_SUN4I_HDMI_CEC=y
 # Enable KMS framebuffer for SDL2/Kivy DRM backend
 CONFIG_DRM_KMS_HELPER=y
 CONFIG_DRM_KMS_FB_HELPER=y
-
+# ── Virtual Terminal / Framebuffer Console ──────────────────────────────────────────────
+# CONFIG_VT is required for /dev/tty1 to exist and for fbcon to attach
+# the DRM framebuffer to the screen. Without it, console=tty1 is silently
+# ignored and the display stays black after DRM mode-sets.
+CONFIG_VT=y
+CONFIG_CONSOLE_TRANSLATIONS=y
+CONFIG_VT_CONSOLE=y
+CONFIG_VT_CONSOLE_SLEEP=y
+CONFIG_DUMMY_CONSOLE=y
+CONFIG_DUMMY_CONSOLE_COLUMNS=80
+CONFIG_DUMMY_CONSOLE_ROWS=25
 # ── Framebuffer ────────────────────────────────────────────────────────────────
 CONFIG_FB=y
 CONFIG_FB_SIMPLE=y
 CONFIG_FRAMEBUFFER_CONSOLE=y
 CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
+CONFIG_FRAMEBUFFER_CONSOLE_DEFERRED_TAKEOVER=y
+# Font for text console on screen
+CONFIG_FONTS=y
+CONFIG_FONT_8x16=y
 # CONFIG_LOGO is not set
 
 # ── PWM & Backlight ────────────────────────────────────────────────────────────
