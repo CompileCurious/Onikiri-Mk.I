@@ -203,5 +203,19 @@
 		reset-names = "phy";
 		#phy-cells = <0>;
 	};
+
+	// PWM — not present in mainline sun50i-h616.dtsi until 6.10+.
+	// H616 PWM is register-compatible with H6; use H6 compatible string
+	// so CONFIG_PWM_SUN4I (already selected) binds without extra patches.
+	// #pwm-cells = <3>: (channel, period-ns, flags) — standard Linux PWM.
+	pwm: pwm@300a000 {
+		compatible = "allwinner,sun50i-h6-pwm";
+		reg = <0x0300a000 0x400>;
+		clocks = <&osc24M>, <&ccu CLK_BUS_PWM>;
+		clock-names = "mod", "bus";
+		resets = <&ccu RST_BUS_PWM>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
 };
 
