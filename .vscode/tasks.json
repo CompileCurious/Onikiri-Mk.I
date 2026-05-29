@@ -4,7 +4,7 @@
     {
       "label": "git-log-check",
       "type": "shell",
-      "command": "cd /workspaces/Onikiri-Mk.I && git --no-pager log --oneline -8 && echo '---STAT---' && git --no-pager diff origin/Default HEAD -- kernel/dts/sun50i-h616-hdmi.dtsi config/uboot/boot.cmd rootfs/etc/init.d/S03boot-import .github/workflows/build-image.yml | head -60",
+      "command": "cd /workspaces/Onikiri-Mk.I && git add rootfs/etc/init.d/S03boot-import && git commit -m 'fix: mount FAT partition rw from start so dmesg.txt is actually written' && git push origin HEAD:Default 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",
       "options": { "cwd": "/workspaces/Onikiri-Mk.I" },
       "presentation": { "reveal": "always", "panel": "new" }
     },
