@@ -68,6 +68,15 @@ jobs:
             git \
             kmod
 
+      # ── ATF source cache ───────────────────────────────────────────────
+      - name: Cache ATF source
+        uses: actions/cache@v4
+        with:
+          path: out/trusted-firmware-a
+          key: atf-v2.10.0-src
+          restore-keys: |
+            atf-v2.10.0-src
+
       # ── U-Boot source cache ──────────────────────────────────────────────
       - name: Cache U-Boot source
         uses: actions/cache@v4

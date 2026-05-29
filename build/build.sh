@@ -38,6 +38,9 @@ KERNEL_TAG="v6.6.30"
 UBOOT_REPO="https://github.com/u-boot/u-boot.git"
 UBOOT_TAG="v2024.10"         # bigtreetech_cb1_defconfig merged ~Aug 2024; v2024.10 is first quarterly release with it
 
+ATF_REPO="https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git"
+ATF_TAG="v2.10.0"            # LTS release; produces bl31.bin for sun50i_h616
+
 # ── Argument parsing ──────────────────────────────────────────────────────────
 OPT_CLEAN=0
 OPT_KERNEL_ONLY=0
@@ -72,6 +75,37 @@ check_deps() {
     require_tool mkfs.ext4
     require_tool dd
     require_tool python3
+}
+
+# ── ARM Trusted Firmware (ATF) build ─────────────────────────────────────────────────────
+build_atf() {
+    log "Building ARM Trusted Firmware ${ATF_TAG} for H616 (sun50i_h616)"
+    ATF_SRC="${BUILD_DIR}/trusted-firmware-a"
+    ATF_BL31="${BUILD_DIR}/bl31.bin"
+
+    if [[ ! -d "${ATF_SRC}" ]]; then
+        git clone --depth=1 --branch="${ATF_TAG}" \
+            "${ATF_REPO}" "${ATF_SRC}"
+    fi
+
+    make -C "${ATF_SRC}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        PLAT=sun50i_h616 \
+        DEBUG=0 \
+        bl31 \
+        -j"${JOBS}" \
+        2>&1 | tee "${BUILD_DIR}/atf-build.log"
+
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        log "ATF build failed — last 40 lines of log:"
+        tail -40 "${BUILD_DIR}/atf-build.log" >&2
+        die "ATF build failed"
+    fi
+
+    install -m644 \
+        "${ATF_SRC}/build/sun50i_h616/release/bl31.bin" \
+        "${ATF_BL31}"
+    log "ATF bl31.bin: ${ATF_BL31}"
 }
 
 # ── U-Boot build ─────────────────────────────────────────────────────────────
@@ -137,6 +171,7 @@ build_uboot() {
     make -C "${UBOOT_SRC}" \
         ARCH=arm \
         CROSS_COMPILE="${CROSS_COMPILE}" \
+        BL31="${BUILD_DIR}/bl31.bin" \
         -j"${JOBS}" \
         2>&1 | tee "${BUILD_DIR}/uboot-build.log"
 
@@ -350,6 +385,7 @@ main() {
     fi
 
     if [[ "${OPT_IMAGE_ONLY}" -eq 0 ]]; then
+        build_atf
         build_uboot
         build_kernel
         # RTL8821CS is an out-of-tree module; skip if CONFIG_MODULES is not set
