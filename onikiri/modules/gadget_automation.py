@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -53,6 +54,10 @@ class GadgetAutomationModule(BaseModule):
             "sd_export",
             "boot_list",
             "boot_import",
+            "payload_create",
+            "payload_add_file",
+            "payload_list",
+            "payload_clear",
         )
 
     # ------------------------------------------------------------------
@@ -258,3 +263,42 @@ class GadgetAutomationModule(BaseModule):
             return {"status": "error", "error": "filename required"}
         store = self._get_store(context)
         return store.boot_import(filename)
+
+    # ------------------------------------------------------------------
+    # Payload (mass storage) image management
+    # ------------------------------------------------------------------
+
+    async def action_payload_create(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """Create (or wipe and recreate) the FAT32 payload.img."""
+        size_mb = int(params.get("size_mb", 64))
+        result = await self._configfs.create_payload_image(size_mb)
+        return {"status": result}
+
+    async def action_payload_add_file(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """Add a file to the payload image from base64-encoded data."""
+        filename = params.get("filename", "").strip()
+        data_b64 = params.get("data_b64", "")
+        if not filename:
+            return {"status": "error", "error": "filename required"}
+        if not data_b64:
+            return {"status": "error", "error": "data_b64 required"}
+        try:
+            data = base64.b64decode(data_b64)
+        except Exception as exc:
+            return {"status": "error", "error": f"invalid base64: {exc}"}
+        # Reject path traversal
+        safe = Path(filename).name
+        if not safe or safe != filename:
+            return {"status": "error", "error": "filename must be a plain name, no path components"}
+        result = await self._configfs.add_payload_file(safe, data)
+        return {"status": result, "filename": safe, "bytes": len(data)}
+
+    async def action_payload_list(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """List files currently in the payload image."""
+        files = await self._configfs.list_payload_files()
+        return {"status": "ok", "files": files}
+
+    async def action_payload_clear(self, params: Dict[str, Any], context: SupervisorContext) -> Dict[str, Any]:
+        """Wipe the payload image back to a blank FAT32 volume."""
+        result = await self._configfs.clear_payload()
+        return {"status": result}

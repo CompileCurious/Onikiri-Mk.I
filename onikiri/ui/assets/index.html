@@ -342,6 +342,21 @@
             <div id="gadget-sd-preview-box" class="hid-sd-preview hidden"></div>
           </div>
 
+          <!-- Payload (mass storage) image manager -->
+          <div class="control-block">
+            <label class="field-label">PAYLOAD IMAGE (USB DRIVE)</label>
+            <ul id="payload-file-list" class="payload-file-list"></ul>
+            <div class="control-row" style="margin-top:0.5rem;gap:0.4rem;flex-wrap:wrap;">
+              <label id="payload-add-label" class="control-secondary" style="cursor:pointer;">
+                + ADD FILE
+                <input id="payload-file-input" type="file" style="display:none;" multiple />
+              </label>
+              <button id="payload-clear-btn" class="control-secondary danger">CLEAR</button>
+              <button id="payload-refresh-btn" class="control-secondary">↻</button>
+            </div>
+            <div id="payload-status" class="editor-error hidden"></div>
+          </div>
+
           <!-- Execution log -->
           <div class="control-block">
             <div style="display:flex;justify-content:space-between;align-items:center;">

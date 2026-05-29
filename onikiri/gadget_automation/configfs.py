@@ -12,6 +12,11 @@ _UDC_PATH = Path("/sys/class/udc")
 _DNSMASQ_PID = Path("/run/onikiri-dnsmasq.pid")
 _TRAFFIC_LOG_PROC: Optional[subprocess.Popen[Any]] = None
 
+# Payload (mass storage) image — FAT32 file presented to the USB host as a flash drive
+_PAYLOAD_IMG = Path("/userdata/payload.img")
+_PAYLOAD_MOUNT = Path("/mnt/onikiri-payload")
+_DEFAULT_PAYLOAD_MB = 64
+
 
 class GadgetConfigFS:
     """
@@ -38,6 +43,8 @@ class GadgetConfigFS:
                 await asyncio.to_thread(self._setup_serial)
             elif profile == "ethernet":
                 await asyncio.to_thread(self._setup_ethernet, params)
+            elif profile == "mass_storage":
+                await asyncio.to_thread(self._setup_mass_storage, params)
             elif profile == "composite":
                 await asyncio.to_thread(self._setup_composite, params)
             elif profile == "custom":
@@ -46,6 +53,41 @@ class GadgetConfigFS:
                 return f"unknown profile: {profile}"
             self._current_profile = profile
             return "ok"
+        except Exception as exc:
+            return f"error: {exc}"
+
+    # ------------------------------------------------------------------
+    # Payload image public API
+    # ------------------------------------------------------------------
+
+    async def create_payload_image(self, size_mb: int = _DEFAULT_PAYLOAD_MB,
+                                   image_path: Path = _PAYLOAD_IMG) -> str:
+        """Create (or re-create) a blank FAT32 payload image."""
+        try:
+            await asyncio.to_thread(self._create_payload_image, image_path, size_mb)
+            return "ok"
+        except Exception as exc:
+            return f"error: {exc}"
+
+    async def add_payload_file(self, filename: str, data: bytes,
+                               image_path: Path = _PAYLOAD_IMG) -> str:
+        """Mount the payload image and write *data* as *filename*."""
+        try:
+            return await asyncio.to_thread(self._add_file_to_payload, image_path, filename, data)
+        except Exception as exc:
+            return f"error: {exc}"
+
+    async def list_payload_files(self, image_path: Path = _PAYLOAD_IMG) -> List[str]:
+        """Return list of filenames in the payload image."""
+        try:
+            return await asyncio.to_thread(self._list_payload_files, image_path)
+        except Exception:
+            return []
+
+    async def clear_payload(self, image_path: Path = _PAYLOAD_IMG) -> str:
+        """Wipe payload image back to a blank FAT32 volume."""
+        try:
+            return await asyncio.to_thread(self._clear_payload, image_path)
         except Exception as exc:
             return f"error: {exc}"
 
@@ -216,6 +258,73 @@ class GadgetConfigFS:
         self._link_function(fn_path)
         self._attach_udc()
 
+    def _add_mass_storage_function(self, backing: Path, read_only: bool = False) -> Path:
+        fn_path = self._gadget / "functions" / "mass_storage.usb0"
+        fn_path.mkdir(parents=True, exist_ok=True)
+        lun = fn_path / "lun.0"
+        lun.mkdir(parents=True, exist_ok=True)
+        self._w(lun / "file", str(backing))
+        self._w(lun / "removable", "1")
+        self._w(lun / "ro", "1" if read_only else "0")
+        return fn_path
+
+    def _setup_mass_storage(self, params: Dict[str, Any]) -> None:
+        self._teardown()
+        backing = Path(params.get("backing_file", str(_PAYLOAD_IMG)))
+        if not backing.exists():
+            self._create_payload_image(backing, int(params.get("size_mb", _DEFAULT_PAYLOAD_MB)))
+        self._common_ids(vid="0x1d6b", pid="0x0106")
+        fn_path = self._add_mass_storage_function(backing, bool(params.get("read_only", False)))
+        self._link_function(fn_path)
+        self._attach_udc()
+
+    def _create_payload_image(self, path: Path, size_mb: int) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["dd", "if=/dev/zero", f"of={path}", "bs=1M", f"count={size_mb}"],
+            check=True, capture_output=True,
+        )
+        subprocess.run(
+            ["mkfs.fat", "-F32", "-n", "PAYLOAD", str(path)],
+            check=True, capture_output=True,
+        )
+
+    def _mount_payload(self, path: Path) -> None:
+        _PAYLOAD_MOUNT.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["mount", "-o", "loop", str(path), str(_PAYLOAD_MOUNT)],
+            check=True, capture_output=True,
+        )
+
+    def _unmount_payload(self) -> None:
+        subprocess.run(["umount", str(_PAYLOAD_MOUNT)], capture_output=True)
+
+    def _add_file_to_payload(self, path: Path, filename: str, data: bytes) -> str:
+        if not path.exists():
+            self._create_payload_image(path, _DEFAULT_PAYLOAD_MB)
+        self._mount_payload(path)
+        try:
+            (Path(_PAYLOAD_MOUNT) / filename).write_bytes(data)
+            return "ok"
+        finally:
+            self._unmount_payload()
+
+    def _list_payload_files(self, path: Path) -> List[str]:
+        if not path.exists():
+            return []
+        self._mount_payload(path)
+        try:
+            return sorted(f.name for f in Path(_PAYLOAD_MOUNT).iterdir())
+        finally:
+            self._unmount_payload()
+
+    def _clear_payload(self, path: Path) -> str:
+        size_mb = _DEFAULT_PAYLOAD_MB
+        if path.exists():
+            size_mb = max(_DEFAULT_PAYLOAD_MB, path.stat().st_size // (1024 * 1024))
+        self._create_payload_image(path, size_mb)
+        return "ok"
+
     def _setup_composite(self, params: Dict[str, Any]) -> None:
         self._teardown()
         functions = params.get("functions", ["hid", "serial"])
@@ -237,6 +346,12 @@ class GadgetConfigFS:
             fn_path = self._gadget / "functions" / "rndis.usb0"
             fn_path.mkdir(parents=True, exist_ok=True)
             self._link_function(fn_path)
+        if "mass_storage" in functions:
+            backing = Path(params.get("backing_file", str(_PAYLOAD_IMG)))
+            if not backing.exists():
+                self._create_payload_image(backing, _DEFAULT_PAYLOAD_MB)
+            ms_path = self._add_mass_storage_function(backing)
+            self._link_function(ms_path)
         self._attach_udc()
 
     def _setup_custom(self, profile: Dict[str, Any]) -> None:
@@ -261,6 +376,14 @@ class GadgetConfigFS:
                 fn_path = self._gadget / "functions" / "rndis.usb0"
                 fn_path.mkdir(parents=True, exist_ok=True)
                 self._link_function(fn_path)
+            elif fn_type == "mass_storage":
+                backing = Path(fn_def.get("backing_file", str(_PAYLOAD_IMG)))
+                if not backing.exists():
+                    self._create_payload_image(backing, _DEFAULT_PAYLOAD_MB)
+                ms_path = self._add_mass_storage_function(
+                    backing, bool(fn_def.get("read_only", False))
+                )
+                self._link_function(ms_path)
         self._attach_udc()
 
     # ------------------------------------------------------------------

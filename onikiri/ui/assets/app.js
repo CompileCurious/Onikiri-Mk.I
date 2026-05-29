@@ -1061,6 +1061,7 @@ function openGadgetView() {
   gadgetView.classList.remove("hidden");
   if (gadgetRefreshTimer) clearInterval(gadgetRefreshTimer);
   refreshGadgetView();
+  refreshPayloadList();
   gadgetRefreshTimer = setInterval(refreshGadgetView, 3000);
 }
 
@@ -1573,4 +1574,79 @@ async function refreshGadgetLog() {
 }
 
 gadgetLogRefreshBtn.addEventListener("click", refreshGadgetLog);
+
+// ------------------------------------------------------------------
+// Payload image management
+// ------------------------------------------------------------------
+
+const payloadFileList   = document.getElementById("payload-file-list");
+const payloadFileInput  = document.getElementById("payload-file-input");
+const payloadClearBtn   = document.getElementById("payload-clear-btn");
+const payloadRefreshBtn = document.getElementById("payload-refresh-btn");
+const payloadStatus     = document.getElementById("payload-status");
+
+function payloadShowStatus(msg, isError = false) {
+  payloadStatus.textContent = msg;
+  payloadStatus.classList.toggle("editor-error", isError);
+  payloadStatus.classList.remove("hidden");
+  setTimeout(() => payloadStatus.classList.add("hidden"), 3500);
+}
+
+async function refreshPayloadList() {
+  try {
+    const resp = await api("/api/gadget/payload/list");
+    payloadFileList.replaceChildren();
+    const files = resp.files || [];
+    if (!files.length) {
+      const li = document.createElement("li");
+      li.className = "payload-empty";
+      li.textContent = "(empty)";
+      payloadFileList.appendChild(li);
+    } else {
+      files.forEach((name) => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        payloadFileList.appendChild(li);
+      });
+    }
+  } catch (e) {
+    payloadShowStatus("Failed to load payload list", true);
+  }
+}
+
+payloadRefreshBtn.addEventListener("click", refreshPayloadList);
+
+payloadClearBtn.addEventListener("click", async () => {
+  const resp = await apiPost("/api/gadget/payload/clear", {});
+  if (resp.status === "ok") {
+    payloadShowStatus("Payload cleared");
+    refreshPayloadList();
+  } else {
+    payloadShowStatus(resp.status || "Error", true);
+  }
+});
+
+// File picker — encode each selected file as base64 and upload
+payloadFileInput.addEventListener("change", async () => {
+  const files = Array.from(payloadFileInput.files || []);
+  if (!files.length) return;
+  for (const file of files) {
+    const ab = await file.arrayBuffer();
+    // Convert ArrayBuffer → base64
+    const bytes = new Uint8Array(ab);
+    let binary = "";
+    bytes.forEach((b) => (binary += String.fromCharCode(b)));
+    const data_b64 = btoa(binary);
+    const resp = await apiPost("/api/gadget/payload/add", {
+      filename: file.name,
+      data_b64,
+    });
+    if (resp.status !== "ok") {
+      payloadShowStatus(`${file.name}: ${resp.status || resp.error}`, true);
+    }
+  }
+  payloadFileInput.value = "";
+  payloadShowStatus("Upload complete");
+  refreshPayloadList();
+});
 

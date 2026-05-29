@@ -136,6 +136,10 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             response = self.state.request("gadget_auto_get_logs")
             self.respond(response)
             return
+        if parsed.path == "/api/gadget/payload/list":
+            response = self.state.request("gadget_auto_payload_list")
+            self.respond(response)
+            return
         if parsed.path == "/":
             self.path = "/index.html"
         super().do_GET()
@@ -314,6 +318,23 @@ class BridgeHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/gadget/teardown":
             response = self.state.request("gadget_auto_gadget_teardown")
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/payload/create":
+            size_mb = int(payload.get("size_mb", 64))
+            response = self.state.request("gadget_auto_payload_create", size_mb=size_mb)
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/payload/add":
+            response = self.state.request(
+                "gadget_auto_payload_add_file",
+                filename=payload.get("filename", ""),
+                data_b64=payload.get("data_b64", ""),
+            )
+            self.respond(response)
+            return
+        if parsed.path == "/api/gadget/payload/clear":
+            response = self.state.request("gadget_auto_payload_clear")
             self.respond(response)
             return
         if parsed.path == "/api/stop_module":

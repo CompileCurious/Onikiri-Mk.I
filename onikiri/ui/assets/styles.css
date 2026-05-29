@@ -617,6 +617,34 @@ select:focus {
   margin-top: 0.4rem;
 }
 
+.payload-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+  border: 2px solid var(--line);
+  min-height: 2.4rem;
+  max-height: 8rem;
+  overflow-y: auto;
+}
+
+.payload-file-list li {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  letter-spacing: 0.05rem;
+  font-family: monospace;
+}
+
+.payload-file-list li:last-child {
+  border-bottom: none;
+}
+
+.payload-file-list .payload-empty {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 .be-params {
   display: flex;
   flex-direction: column;
