@@ -64,6 +64,19 @@ if [ ! -x /newroot/sbin/init ]; then
     panic "/newroot/sbin/init not found or not executable — squashfs may be corrupt"
 fi
 
+# ── Save kernel log to FAT boot partition ────────────────────────────────────
+# p1 (vfat, ONIKIRI) is readable on any OS. Write dmesg here, in the
+# initramfs ramfs, so we never hit read-only SquashFS or failed userspace
+# init scripts. mmcblk0p1 must exist if mmcblk0p2 was found above.
+mkdir -p /mnt
+if mount -t vfat /dev/mmcblk0p1 /mnt -o rw,noatime 2>/dev/null; then
+    dmesg > /mnt/dmesg.txt 2>/dev/null && sync
+    umount /mnt 2>/dev/null || true
+    echo "dmesg.txt written to FAT boot partition"
+else
+    echo "WARNING: could not mount /dev/mmcblk0p1 — dmesg.txt not written"
+fi
+
 # ── Move virtual filesystems into the new root ────────────────────────────────
 mkdir -p /newroot/proc /newroot/sys /newroot/dev /newroot/dev/pts \
          /newroot/run /newroot/tmp

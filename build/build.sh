@@ -523,7 +523,7 @@ build_initramfs() {
     INITRAMFS_IMG="${BUILD_DIR}/initramfs.cpio.gz"
 
     rm -rf "${INITRAMFS_STAGE}"
-    mkdir -p "${INITRAMFS_STAGE}"/{bin,sbin,usr/bin,usr/sbin,lib,proc,sys,dev,run,tmp,newroot}
+    mkdir -p "${INITRAMFS_STAGE}"/{bin,sbin,usr/bin,usr/sbin,lib,proc,sys,dev,run,tmp,mnt,newroot}
 
     # Use the ARM64 busybox-static from the rootfs_stage — the initramfs runs
     # on the target hardware, so the binary must be ARM64, not the host x86_64.
