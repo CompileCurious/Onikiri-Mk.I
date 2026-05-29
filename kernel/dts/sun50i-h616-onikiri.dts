@@ -23,12 +23,10 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		// Kernel command line — fast boot, no splash
-		bootargs = "console=ttyS0,115200n8 root=/dev/mmcblk0p2 ro rootfstype=squashfs \
-			rootwait quiet loglevel=3 init=/sbin/init \
-			fbcon=map:0 drm.debug=0 \
-			zswap.enabled=1 zswap.compressor=lz4 \
-			usbcore.autosuspend=-1";
+		// bootargs are supplied by U-Boot boot.cmd via setenv bootargs.
+		// Do NOT set bootargs here — U-Boot writes its env into the DTB's
+		// chosen node, and a non-empty DTS value can conflict in some
+		// U-Boot versions, causing the wrong root= to be used.
 	};
 
 	// 1 GiB DDR3L on CB1

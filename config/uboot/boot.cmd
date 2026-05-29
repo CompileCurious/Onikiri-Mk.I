@@ -15,7 +15,8 @@ fbcon=map:0 drm.debug=0 \
 zswap.enabled=1 zswap.compressor=lz4 \
 usbcore.autosuspend=-1 \
 coherent_pool=2M \
-cma=32M"
+cma=32M \
+panic=-1"
 
 # ── Load kernel, initramfs and DTB from FAT boot partition (mmcblk0p1) ───────────────
 mmc dev 0

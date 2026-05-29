@@ -10,27 +10,72 @@
 # Kernel cmdline parameters:
 #   rofs_device=<dev>   SquashFS system partition  (default: /dev/mmcblk0p2)
 
-set -eu
-
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-mount -t proc     proc     /proc
-mount -t sysfs    sysfs    /sys
-mount -t devtmpfs devtmpfs /dev
-mount -t tmpfs    -o mode=0755,size=32m tmpfs /run
-mount -t tmpfs    -o mode=1777,size=64m tmpfs /tmp
 
+# ── Emergency shell — called on any fatal error ───────────────────────────────
+# Drops to an interactive busybox shell so failures can be diagnosed on-screen.
+panic() {
+    echo "ONIKIRI INITRAMFS PANIC: $*" >/dev/console 2>/dev/null || true
+    echo "Dropping to emergency shell. Type 'exit' to attempt reboot." >/dev/console 2>/dev/null || true
+    exec /bin/sh
+    # If sh itself fails, loop forever so panic=-1 keeps the message on screen
+    while true; do sleep 1; done
+}
+
+# ── Mount virtual filesystems ─────────────────────────────────────────────────
+# Use || true so we don't die if the kernel already populated /dev (devtmpfs).
+mount -t proc     proc     /proc     2>/dev/null || true
+mount -t sysfs    sysfs    /sys      2>/dev/null || true
+mount -t devtmpfs devtmpfs /dev      2>/dev/null || true
+mkdir -p /dev/pts
+mount -t devpts   devpts   /dev/pts  2>/dev/null || true
+mount -t tmpfs    -o mode=0755,size=32m tmpfs /run 2>/dev/null || true
+mount -t tmpfs    -o mode=1777,size=64m tmpfs /tmp 2>/dev/null || true
+
+# Redirect console output now that /dev is populated
+exec >/dev/console 2>/dev/console </dev/console
+
+echo "Onikiri initramfs starting..."
+
+# ── Wait for MMC block device ─────────────────────────────────────────────────
+# The MMC host driver is async; the block device may not exist yet when
+# this script first runs.  Wait up to 10 seconds for it to appear.
 ROFS_DEVICE="${rofs_device:-/dev/mmcblk0p2}"
+echo "Waiting for ${ROFS_DEVICE}..."
+TIMEOUT=10
+while [ ! -b "${ROFS_DEVICE}" ] && [ "${TIMEOUT}" -gt 0 ]; do
+    sleep 1
+    TIMEOUT=$((TIMEOUT - 1))
+done
+if [ ! -b "${ROFS_DEVICE}" ]; then
+    panic "${ROFS_DEVICE} not found after 10 seconds — MMC driver failed to probe"
+fi
+echo "Found ${ROFS_DEVICE}"
 
+# ── Mount squashfs root ───────────────────────────────────────────────────────
 mkdir -p /newroot
-mount -t squashfs -o ro "${ROFS_DEVICE}" /newroot
+if ! mount -t squashfs -o ro "${ROFS_DEVICE}" /newroot; then
+    panic "Failed to mount squashfs from ${ROFS_DEVICE}"
+fi
+echo "SquashFS mounted from ${ROFS_DEVICE}"
 
-# Move virtual filesystems into the new root so they are available
-# before rcS runs inside the squashfs.
-mkdir -p /newroot/proc /newroot/sys /newroot/dev /newroot/run /newroot/tmp
-mount --move /proc /newroot/proc
-mount --move /sys  /newroot/sys
-mount --move /dev  /newroot/dev
-mount --move /run  /newroot/run
-mount --move /tmp  /newroot/tmp
+# ── Verify the new root looks sane ───────────────────────────────────────────
+if [ ! -x /newroot/sbin/init ]; then
+    panic "/newroot/sbin/init not found or not executable — squashfs may be corrupt"
+fi
 
+# ── Move virtual filesystems into the new root ────────────────────────────────
+mkdir -p /newroot/proc /newroot/sys /newroot/dev /newroot/dev/pts \
+         /newroot/run /newroot/tmp
+mount --move /proc     /newroot/proc
+mount --move /sys      /newroot/sys
+mount --move /dev/pts  /newroot/dev/pts 2>/dev/null || true
+mount --move /dev      /newroot/dev
+mount --move /run      /newroot/run
+mount --move /tmp      /newroot/tmp
+
+echo "Switching root to ${ROFS_DEVICE}..."
 exec switch_root /newroot /sbin/init
+
+# Should never reach here
+panic "switch_root failed"

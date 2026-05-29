@@ -72,13 +72,23 @@ jobs:
             binfmt-support
 
       # ── Rootfs package cache ─────────────────────────────────────────────
-      # debootstrap + pip takes ~5 min; cache keyed on suite + package hash.
-      # Delete the cache key manually on GitHub when packages change.
-      - name: Cache bootstrapped rootfs
+      # The rootfs_stage directory is owned by root (created via sudo) so
+      # actions/cache cannot tar it directly.  Instead we cache a runner-owned
+      # .tar.gz that we create with sudo after the build and chown to the
+      # runner.  Before the build we extract it back with sudo so the build
+      # script sees out/rootfs_stage/etc/debian_version and skips debootstrap.
+      - name: Restore rootfs cache
+        id: rootfs-cache
         uses: actions/cache@v4
         with:
-          path: out/rootfs_stage
-          key: rootfs-bookworm-arm64-v1
+          path: out/rootfs_stage.tar.gz
+          key: rootfs-bookworm-arm64-v2
+
+      - name: Extract rootfs cache
+        if: steps.rootfs-cache.outputs.cache-hit == 'true'
+        run: |
+          mkdir -p out
+          sudo tar -xzf out/rootfs_stage.tar.gz -C out/
 
       # ── ATF source cache ───────────────────────────────────────────────
       - name: Cache ATF source
@@ -115,8 +125,19 @@ jobs:
           ARCH: arm64
         run: |
           chmod +x build/build.sh build/mkimage.sh
-          # debootstrap chroot + mkimage.sh losetup both need root
-          sudo -E bash build/build.sh
+          # Pass HOME=/root explicitly so chroot operations don't write into
+          # rootfs_stage/home/runner via the inherited sudo -E environment.
+          # losetup and debootstrap/chroot/mount all need root.
+          sudo -E HOME=/root bash build/build.sh
+
+      # ── Pack rootfs for next cache (only on cache miss = fresh debootstrap) -
+      - name: Archive rootfs for cache
+        if: steps.rootfs-cache.outputs.cache-hit != 'true'
+        run: |
+          if [[ -d out/rootfs_stage ]]; then
+            sudo tar -czf out/rootfs_stage.tar.gz -C out/ rootfs_stage
+            sudo chown "$(id -u):$(id -g)" out/rootfs_stage.tar.gz
+          fi
 
       # ── Rename artifact with build stamp ─────────────────────────────────
       - name: Rename image with build stamp

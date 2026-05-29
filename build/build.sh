@@ -357,7 +357,7 @@ install_target_packages() {
     }
 
     log "  debootstrap second stage (inside ARM64 chroot via qemu)"
-    if ! chroot "${ROOTFS_STAGE}" /debootstrap/debootstrap --second-stage \
+    if ! HOME=/root chroot "${ROOTFS_STAGE}" /debootstrap/debootstrap --second-stage \
             2>&1 | tee -a "${BUILD_DIR}/debootstrap.log"; then
         _chroot_unmount
         log "debootstrap second stage failed — last 40 lines:"
@@ -375,7 +375,7 @@ EOF
     chmod +x "${ROOTFS_STAGE}/usr/sbin/policy-rc.d"
 
     log "  installing daemon packages (bluez, wpasupplicant, nmap, libsdl2-dev)"
-    DEBIAN_FRONTEND=noninteractive chroot "${ROOTFS_STAGE}" \
+    DEBIAN_FRONTEND=noninteractive HOME=/root chroot "${ROOTFS_STAGE}" \
         apt-get install -y --no-install-recommends \
             bluez \
             wpasupplicant \
@@ -392,7 +392,7 @@ EOF
 
     # ── Phase 3: Python packages ──────────────────────────────────────────────
     log "  installing Python packages (kivy, scapy, pyftpdlib, ...)"
-    if ! chroot "${ROOTFS_STAGE}" \
+    if ! HOME=/root chroot "${ROOTFS_STAGE}" \
             pip3 install --break-system-packages --no-cache-dir \
                 "kivy[base]>=2.3.0" \
                 scapy \
@@ -417,8 +417,8 @@ EOF
     rm -rf "${ROOTFS_STAGE}/debootstrap"
     rm -rf "${ROOTFS_STAGE}/usr/share/doc/"
     rm -rf "${ROOTFS_STAGE}/usr/share/man/"
-    rm -rf "${ROOTFS_STAGE}/usr/share/locale/"
-
+    rm -rf "${ROOTFS_STAGE}/usr/share/locale/"    # Remove any host-HOME artefacts that leaked in via sudo -E HOME=/home/runner
+    rm -rf "${ROOTFS_STAGE}/home/"
     log "  ARM64 target packages installed"
 }
 
@@ -440,10 +440,19 @@ assemble_rootfs() {
     done
 
     # ── BusyBox symlinks (ARM64 busybox-static from debootstrap) ─────────────
-    # Use the host busybox's applet list to create symlinks — the applet names
-    # are identical across architectures.  The target binary is ARM64.
-    local BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox"
-    [[ -x "${BUSYBOX_ARM64}" ]] || die "ARM64 busybox not found at ${BUSYBOX_ARM64} — debootstrap may have failed"
+    # Debian's busybox-static package installs to /bin/busybox-static;
+    # the busybox package (dynamic) installs to /bin/busybox.
+    # Accept either location.
+    local BUSYBOX_ARM64
+    if   [[ -x "${ROOTFS_STAGE}/bin/busybox" ]];        then BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox"
+    elif [[ -x "${ROOTFS_STAGE}/bin/busybox-static" ]]; then BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox-static"
+    else die "ARM64 busybox not found in ${ROOTFS_STAGE}/bin/ — debootstrap may have failed"
+    fi
+    # Ensure /bin/busybox inside the rootfs points to the binary
+    # (switch_root calls /sbin/init which is a busybox symlink)
+    if [[ "${BUSYBOX_ARM64}" != "${ROOTFS_STAGE}/bin/busybox" ]]; then
+        install -m755 "${BUSYBOX_ARM64}" "${ROOTFS_STAGE}/bin/busybox"
+    fi
 
     busybox --list | while read -r applet; do
         ln -sf /bin/busybox "${ROOTFS_STAGE}/bin/${applet}" 2>/dev/null || true
@@ -505,8 +514,12 @@ build_initramfs() {
 
     # Use the ARM64 busybox-static from the rootfs_stage — the initramfs runs
     # on the target hardware, so the binary must be ARM64, not the host x86_64.
-    local BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox"
-    [[ -x "${BUSYBOX_ARM64}" ]] || die "ARM64 busybox not found in rootfs_stage — run assemble_rootfs first"
+    # Prefer busybox-static (guaranteed static); fall back to busybox.
+    local BUSYBOX_ARM64
+    if   [[ -x "${ROOTFS_STAGE}/bin/busybox-static" ]]; then BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox-static"
+    elif [[ -x "${ROOTFS_STAGE}/bin/busybox" ]];         then BUSYBOX_ARM64="${ROOTFS_STAGE}/bin/busybox"
+    else die "ARM64 busybox-static not found in rootfs_stage — run assemble_rootfs first"
+    fi
     install -m755 "${BUSYBOX_ARM64}" "${INITRAMFS_STAGE}/bin/busybox"
     for applet in sh mount umount switch_root; do
         ln -sf /bin/busybox "${INITRAMFS_STAGE}/bin/${applet}"
