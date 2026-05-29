@@ -40,7 +40,10 @@
 	// The ccu-sun8i-de2.c driver probes this node and gates/rates
 	// the downstream mixer clocks.
 	de_clk: clock-controller@1000000 {
-		compatible = "allwinner,sun50i-h616-de33-clk";
+		// Primary: H616-specific (patch 002). Fallback: H6 DE3 which is
+		// register-compatible and already in ccu-sun8i-de2.c in 6.6.30.
+		compatible = "allwinner,sun50i-h616-de33-clk",
+			     "allwinner,sun50i-h6-de3-clk";
 		reg = <0x01000000 0x10000>;
 		clocks = <&ccu CLK_BUS_DE>, <&ccu CLK_DE>;
 		clock-names = "bus", "mod";
@@ -195,7 +198,11 @@
 	};
 
 	hdmi_phy: hdmi-phy@5510000 {
-		compatible = "allwinner,sun50i-h616-hdmi-phy";
+		// Primary: H616-specific PHY tables (patch 001). Fallback: H6
+		// PHY driver already in kernel 6.6 — different MPLL tables but
+		// will produce output at standard HDMI clock rates.
+		compatible = "allwinner,sun50i-h616-hdmi-phy",
+			     "allwinner,sun50i-h6-hdmi-phy";
 		reg = <0x05510000 0x10000>;
 		clocks = <&ccu CLK_BUS_HDMI>, <&ccu CLK_HDMI_SLOW>;
 		clock-names = "bus", "mod";

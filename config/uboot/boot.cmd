@@ -15,7 +15,7 @@ setenv bootargs "console=ttyS0,115200n8 console=tty1 \
 video=HDMI-A-1:1024x600-24@60 \
 root=/dev/ram0 rdinit=/init rofs_device=/dev/mmcblk0p2 \
 loglevel=7 ignore_loglevel \
-fbcon=map:0 drm.debug=0 \
+fbcon=map:0 drm.debug=0x3f \
 zswap.enabled=1 zswap.compressor=lz4 \
 usbcore.autosuspend=-1 \
 coherent_pool=2M \
