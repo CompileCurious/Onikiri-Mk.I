@@ -6,9 +6,14 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/sun50i-h616-ccu.h>
 #include <dt-bindings/reset/sun50i-h616-ccu.h>
-#include <dt-bindings/clock/sun8i-de2.h>
-#include <dt-bindings/clock/sun8i-tcon-top.h>
-#include <dt-bindings/reset/sun8i-de2.h>
+
+// Note: sun8i-de2.h and sun8i-tcon-top.h define macros (CLK_BUS_DE,
+// RST_BUS_DE, CLK_TCON_TOP_TV0 ...) that collide with identically-named
+// macros in sun50i-h616-ccu.h.  To avoid silent wrong-value substitution,
+// those headers are NOT included here.  Raw integer indices are used instead
+// for references into the DE sub-CCU and TCON-top clocks:
+//   DE sub-CCU:   0 = bus clock, 1 = module clock / reset
+//   TCON-top:     2 = CLK_TCON_TOP_TV0
 
 &{/} {
 	de: display-engine {
@@ -19,14 +24,200 @@
 };
 
 &{/soc} {
-	mixer0: mixer@1000000 {
-		compatible = "allwinner,sun50i-h616-de3-mixer",
-			     "allwinner,sun50i-h6-de3-mixer";
-		reg = <0x01000000 0x100000>;
-		clocks = <&ccu CLK_BUS_DE>,
-			 <&ccu CLK_DE>;
+	// ── Display Engine 3.3 bus ─────────────────────────────────────────────
+	// The H616 DE3.3 is register-compatible with H6 DE3.
+	// Base address 0x01000000, 4 MiB span.
+	//   0x01000000  DE sub-CCU (de_clk) — controls DE internal clocks
+	//   0x01100000  mixer0
+	de_bus: bus@1000000 {
+		compatible = "allwinner,sun50i-h616-de33", "simple-bus";
+		reg = <0x01000000 0x400000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		// DE internal clock controller.
+		// Inputs:  CLK_BUS_DE and CLK_DE from the H616 main CCU.
+		// Outputs: internal bus (index 0) and mod (index 1) clocks
+		//          consumed by mixer0.
+		de_clk: clock-controller@0 {
+			compatible = "allwinner,sun50i-h616-de33-clk";
+			reg = <0x0 0x10000>;
+			clocks = <&ccu CLK_BUS_DE>, <&ccu CLK_DE>;
+			clock-names = "bus", "mod";
+			resets = <&ccu RST_BUS_DE>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
+
+		// Display mixer 0.  Uses H6 compatible — H616 mixer is register-
+		// compatible and kernel 6.6 sun8i_mixer.c only has the H6 entry.
+		// Clocks/resets reference de_clk by raw index to avoid header
+		// macro collisions (see note at top of file).
+		mixer0: mixer@100000 {
+			compatible = "allwinner,sun50i-h6-de3-mixer-0";
+			reg = <0x100000 0x100000>;
+			clocks = <&de_clk 0>, <&de_clk 1>;
+			clock-names = "bus", "mod";
+			resets = <&de_clk 0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				mixer0_out: port@1 {
+					reg = <1>;
+
+					mixer0_out_tcon_top_mixer0: endpoint {
+						remote-endpoint = <&tcon_top_mixer0_in_mixer0>;
+					};
+				};
+			};
+		};
+	};
+
+	tcon_top: tcon-top@5070000 {
+		compatible = "allwinner,sun50i-h6-tcon-top";
+		reg = <0x05070000 0x1000>;
+		clocks = <&ccu CLK_BUS_TCON_TOP>,
+			 <&ccu CLK_TCON_TV0>;
+		clock-names = "bus", "tcon-tv0";
+		clock-output-names = "tcon-top-tv0";
+		resets = <&ccu RST_BUS_TCON_TOP>;
+		#clock-cells = <1>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			tcon_top_mixer0_in: port@0 {
+				reg = <0>;
+
+				tcon_top_mixer0_in_mixer0: endpoint {
+					remote-endpoint = <&mixer0_out_tcon_top_mixer0>;
+				};
+			};
+
+			tcon_top_mixer0_out: port@1 {
+				reg = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				tcon_top_mixer0_out_tcon_tv: endpoint@2 {
+					reg = <2>;
+					remote-endpoint = <&tcon_tv_in_tcon_top_mixer0>;
+				};
+			};
+
+			tcon_top_hdmi_in: port@4 {
+				reg = <4>;
+
+				tcon_top_hdmi_in_tcon_tv: endpoint {
+					remote-endpoint = <&tcon_tv_out_tcon_top>;
+				};
+			};
+
+			tcon_top_hdmi_out: port@5 {
+				reg = <5>;
+
+				tcon_top_hdmi_out_hdmi: endpoint {
+					remote-endpoint = <&hdmi_in_tcon_top>;
+				};
+			};
+		};
+	};
+
+	tcon_tv: lcd-controller@5051000 {
+		compatible = "allwinner,sun50i-h6-tcon-tv";
+		reg = <0x05051000 0x1000>;
+		interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&ccu CLK_BUS_TCON_TV0>,
+			 <&tcon_top 2>;
+		clock-names = "ahb", "tcon-ch1";
+		resets = <&ccu RST_BUS_TCON_TV0>;
+		reset-names = "lcd";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			tcon_tv_in: port@0 {
+				reg = <0>;
+
+				tcon_tv_in_tcon_top_mixer0: endpoint {
+					remote-endpoint = <&tcon_top_mixer0_out_tcon_tv>;
+				};
+			};
+
+			tcon_tv_out: port@1 {
+				reg = <1>;
+
+				tcon_tv_out_tcon_top: endpoint {
+					remote-endpoint = <&tcon_top_hdmi_in_tcon_tv>;
+				};
+			};
+		};
+	};
+
+	hdmi: hdmi@5500000 {
+		// H616 uses the H6-compatible DW-HDMI IP.
+		// In kernel 6.6 sun8i_dw_hdmi.c does not yet have an H616
+		// entry; the H6 fallback makes the DRM_SUN8I_DW_HDMI driver bind.
+		compatible = "allwinner,sun50i-h616-dw-hdmi",
+			     "allwinner,sun50i-h6-dw-hdmi";
+		reg = <0x05500000 0x10000>;
+		reg-io-width = <1>;
+		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&ccu CLK_BUS_HDMI>, <&ccu CLK_HDMI_SLOW>,
+			 <&ccu CLK_HDMI>, <&ccu CLK_HDMI_CEC>,
+			 <&ccu CLK_HDCP>, <&ccu CLK_BUS_HDCP>;
+		clock-names = "iahb", "isfr", "tmds", "cec", "hdcp",
+			      "hdcp-bus";
+		resets = <&ccu RST_BUS_HDMI_SUB>, <&ccu RST_BUS_HDCP>;
+		reset-names = "ctrl", "hdcp";
+		phys = <&hdmi_phy>;
+		phy-names = "phy";
+		status = "disabled";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			hdmi_in: port@0 {
+				reg = <0>;
+
+				hdmi_in_tcon_top: endpoint {
+					remote-endpoint = <&tcon_top_hdmi_out_hdmi>;
+				};
+			};
+
+			hdmi_out: port@1 {
+				reg = <1>;
+			};
+		};
+	};
+
+	hdmi_phy: hdmi-phy@5510000 {
+		compatible = "allwinner,sun50i-h616-hdmi-phy";
+		reg = <0x05510000 0x10000>;
+		clocks = <&ccu CLK_BUS_HDMI>, <&ccu CLK_HDMI_SLOW>;
 		clock-names = "bus", "mod";
-		resets = <&ccu RST_BUS_DE>;
+		resets = <&ccu RST_BUS_HDMI_SUB>;
+		reset-names = "phy";
+		#phy-cells = <0>;
+	};
+
+	pwm: pwm@300a000 {
+		compatible = "allwinner,sun50i-h616-pwm";
+		reg = <0x0300a000 0x400>;
+		clocks = <&osc24M>, <&ccu CLK_BUS_PWM>;
+		clock-names = "mod", "bus";
+		resets = <&ccu RST_BUS_PWM>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+};
+
 
 		ports {
 			#address-cells = <1>;
