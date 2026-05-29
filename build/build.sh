@@ -36,7 +36,7 @@ KERNEL_REPO="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
 KERNEL_TAG="v6.6.30"
 
 UBOOT_REPO="https://github.com/u-boot/u-boot.git"
-UBOOT_TAG="v2025.01"         # bigtreetech_cb1_defconfig merged after v2024.04
+UBOOT_TAG="v2024.10"         # bigtreetech_cb1_defconfig merged ~Aug 2024; v2024.10 is first quarterly release with it
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 OPT_CLEAN=0
@@ -85,13 +85,34 @@ build_uboot() {
             "${UBOOT_REPO}" "${UBOOT_SRC}"
     fi
 
-    # bigtreetech_cb1_defconfig was merged after v2024.04; fall back to the
-    # generic H616 config if the board-specific one isn't present.
-    local DEFCONFIG="bigtreetech_cb1_defconfig"
-    if [[ ! -f "${UBOOT_SRC}/configs/${DEFCONFIG}" ]]; then
-        log "[WARN] ${DEFCONFIG} not found — falling back to sun50i_h616_defconfig"
-        DEFCONFIG="sun50i_h616_defconfig"
+    # Locate the best available defconfig for the H616 / CB1.  The board-
+    # specific config landed in mainline after v2024.04; fall through a list
+    # of known H616 configs rather than hard-failing on a missing name.
+    # orangepi_zero2 is also H616 and produces a working SPL as last resort.
+    local DEFCONFIG=""
+    local -a CANDIDATES=(
+        bigtreetech_cb1_defconfig
+        bigtreetech-cb1_defconfig
+        sun50i_h616_defconfig
+        orangepi_zero2_defconfig
+    )
+    for candidate in "${CANDIDATES[@]}"; do
+        if [[ -f "${UBOOT_SRC}/configs/${candidate}" ]]; then
+            DEFCONFIG="${candidate}"
+            break
+        fi
+    done
+    if [[ -z "${DEFCONFIG}" ]]; then
+        # Last resort: find any H616 or bigtreetech config in the tree
+        DEFCONFIG=$(ls "${UBOOT_SRC}/configs/" 2>/dev/null \
+            | grep -iE 'h616|bigtreetech' | head -1 || true)
     fi
+    if [[ -z "${DEFCONFIG}" ]]; then
+        log "Available sunxi configs:"
+        ls "${UBOOT_SRC}/configs/" | grep -i sun50i || true
+        die "No H616-compatible U-Boot defconfig found in ${UBOOT_SRC}/configs/"
+    fi
+    log "Using U-Boot defconfig: ${DEFCONFIG}"
 
     make -C "${UBOOT_SRC}" \
         ARCH="${ARCH}" \

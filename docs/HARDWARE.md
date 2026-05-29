@@ -92,6 +92,9 @@ Based on official schematics and mainline kernel DTS.
 | RGB LED | TBD | Likely SPI or I2C controller |
 
 ## References
-- [BTT Pad 7 GitHub](https://github.com/bigtreetech/Pad7)
-- [CB1 Mainline DTS](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-cb1.dtsi)
+- [BTT Pad 7 GitHub](https://github.com/bigtreetech/Pad7) — hardware schematics and mechanical drawings only (no software)
+  - [Schematic PDF](https://github.com/bigtreetech/Pad7/blob/master/BIGTREETECH%20PD7%20V1.0-SCH.pdf) — source of truth for all GPIO/pin assignments
+- [BTT CB1 GitHub](https://github.com/bigtreetech/CB1) — Armbian-based OS images and CB1 module software
+- [CB1 Mainline DTS](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-cb1.dtsi) — `sun50i-h616-bigtreetech-cb1.dtsi` in mainline kernel
+- [U-Boot CB1 defconfig](https://github.com/u-boot/u-boot/blob/master/configs/bigtreetech_cb1_defconfig) — `bigtreetech_cb1_defconfig` in U-Boot mainline (merged ~Aug 2024, present from v2024.10)
 - [Armbian CB1 Config](https://github.com/armbian/build/blob/main/config/boards/bigtreetech-cb1.conf)
