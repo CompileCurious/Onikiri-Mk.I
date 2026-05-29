@@ -128,7 +128,12 @@ jobs:
           # Pass HOME=/root explicitly so chroot operations don't write into
           # rootfs_stage/home/runner via the inherited sudo -E environment.
           # losetup and debootstrap/chroot/mount all need root.
-          sudo -E HOME=/root bash build/build.sh
+          sudo -E HOME=/root bash build/build.sh 2>&1 | tee /tmp/full-build.log
+          if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+            echo "=== ERRORS / WARNINGS ===" >&2
+            grep -iE "error:|warning:|undefined|fatal|DTC|dtc" /tmp/full-build.log | tail -80 >&2
+            exit 1
+          fi
 
       # ── Pack rootfs for next cache (only on cache miss = fresh debootstrap) -
       - name: Archive rootfs for cache

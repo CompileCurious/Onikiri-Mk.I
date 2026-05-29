@@ -236,17 +236,30 @@ build_kernel() {
         CROSS_COMPILE="${CROSS_COMPILE}" \
         h616_onikiri_defconfig
 
+    # Build DTBs first, single-threaded, so DTS/DTC errors surface clearly
+    # before the parallel kernel compile swamps the log with interleaved output.
+    log "Building DTBs (DTS check)..."
+    make -C "${KERNEL_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        dtbs 2>&1 | tee "${BUILD_DIR}/dtbs-build.log"
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        log "DTB build failed — full log:"
+        cat "${BUILD_DIR}/dtbs-build.log" >&2
+        die "DTB build failed (check DTS errors above)"
+    fi
+
     make -C "${KERNEL_SRC}" \
         ARCH="${ARCH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
         -j"${JOBS}" \
         --output-sync=line \
-        Image dtbs 2>&1 | tee "${BUILD_DIR}/kernel-build.log"
+        Image 2>&1 | tee "${BUILD_DIR}/kernel-build.log"
     # Fail loudly if the pipe succeeded but make itself failed
     if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
         log "Kernel build failed — last 60 lines of log:"
         tail -60 "${BUILD_DIR}/kernel-build.log" >&2
-        die "Kernel build failed"
+        die "Kernel (Image) build failed"
     fi
     # Modules target is a no-op with CONFIG_MODULES=n; kept for completeness
     make -C "${KERNEL_SRC}" \
