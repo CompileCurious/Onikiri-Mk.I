@@ -123,6 +123,17 @@ build_uboot() {
         CROSS_COMPILE="${CROSS_COMPILE}" \
         "${DEFCONFIG}"
 
+    # Disable the EFI capsule update tool — not needed on an embedded Sunxi
+    # target and it pulls in host dependencies (libgnutls, libuuid) that are
+    # not always present.  Disabling here keeps builds hermetic.
+    "${UBOOT_SRC}/scripts/config" \
+        --file "${UBOOT_SRC}/.config" \
+        --disable TOOLS_MKEFICAPSULE
+    make -C "${UBOOT_SRC}" \
+        ARCH=arm \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        olddefconfig 2>/dev/null
+
     make -C "${UBOOT_SRC}" \
         ARCH=arm \
         CROSS_COMPILE="${CROSS_COMPILE}" \

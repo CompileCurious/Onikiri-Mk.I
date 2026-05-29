@@ -59,11 +59,23 @@ jobs:
             python3-dev \
             swig \
             uuid-dev \
+            libgnutls28-dev \
+            libgnutls-openssl-dev \
+            liblzma-dev \
             cpio \
             rsync \
             wget \
             git \
             kmod
+
+      # ── U-Boot source cache ──────────────────────────────────────────────
+      - name: Cache U-Boot source
+        uses: actions/cache@v4
+        with:
+          path: out/u-boot
+          key: uboot-v2024.10-src
+          restore-keys: |
+            uboot-v2024.10-src
 
       # ── Kernel source cache ──────────────────────────────────────────────
       - name: Cache Linux kernel source
