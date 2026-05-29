@@ -2,12 +2,14 @@
 # build/build.sh — Onikiri Mk.I top-level build script
 #
 # Builds the complete system from source:
-#   1. Cross-compile Linux kernel + DTB
-#   2. Assemble root filesystem (SquashFS)
-#   3. Produce bootable microSD image
+#   1. Cross-compile U-Boot (SPL + proper) for CB1 / H616
+#   2. Cross-compile Linux kernel + DTB
+#   3. Assemble root filesystem (SquashFS)
+#   4. Produce bootable microSD image
 #
 # Requirements (host):
 #   aarch64-linux-gnu-gcc, make, bc, bison, flex, libssl-dev
+#   swig, python3-dev (for U-Boot scripts)
 #   squashfs-tools, dosfstools, parted, genimage
 #   Python 3.10+ (for supervisor/UI test)
 #
@@ -63,12 +65,45 @@ check_deps() {
     log "Checking build dependencies"
     require_tool "${CROSS_COMPILE}gcc"
     require_tool make
+    require_tool swig
     require_tool mksquashfs
     require_tool parted
     require_tool mkfs.fat
     require_tool mkfs.ext4
     require_tool dd
     require_tool python3
+}
+
+# ── U-Boot build ─────────────────────────────────────────────────────────────
+build_uboot() {
+    log "Building U-Boot ${UBOOT_TAG} for BigTreeTech CB1 (H616)"
+    UBOOT_SRC="${BUILD_DIR}/u-boot"
+    UBOOT_OUT="${BUILD_DIR}/u-boot-sunxi-with-spl.bin"
+
+    if [[ ! -d "${UBOOT_SRC}" ]]; then
+        git clone --depth=1 --branch="${UBOOT_TAG}" \
+            "${UBOOT_REPO}" "${UBOOT_SRC}"
+    fi
+
+    make -C "${UBOOT_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        bigtreetech_cb1_defconfig
+
+    make -C "${UBOOT_SRC}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        -j"${JOBS}" \
+        2>&1 | tee "${BUILD_DIR}/uboot-build.log"
+
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        log "U-Boot build failed — last 40 lines of log:"
+        tail -40 "${BUILD_DIR}/uboot-build.log" >&2
+        die "U-Boot build failed"
+    fi
+
+    install -m644 "${UBOOT_SRC}/u-boot-sunxi-with-spl.bin" "${UBOOT_OUT}"
+    log "U-Boot binary: ${UBOOT_OUT}"
 }
 
 # ── Clean ─────────────────────────────────────────────────────────────────────
@@ -271,6 +306,7 @@ main() {
     fi
 
     if [[ "${OPT_IMAGE_ONLY}" -eq 0 ]]; then
+        build_uboot
         build_kernel
         # RTL8821CS is an out-of-tree module; skip if CONFIG_MODULES is not set
         if grep -q "^CONFIG_MODULES=y" "${KERNEL_SRC}/.config" 2>/dev/null; then
