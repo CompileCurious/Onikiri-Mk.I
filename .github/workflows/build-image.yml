@@ -56,6 +56,9 @@ jobs:
             u-boot-tools \
             busybox-static \
             python3 \
+            python3-dev \
+            swig \
+            uuid-dev \
             cpio \
             rsync \
             wget \
