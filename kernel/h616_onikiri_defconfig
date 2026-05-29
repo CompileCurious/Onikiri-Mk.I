@@ -79,16 +79,16 @@ CONFIG_MMC_SUNXI=y
 # ── Display Engine 3.0 (DRM) — H616 with HDMI support ─────────────────────────
 CONFIG_DRM=y
 CONFIG_DRM_FBDEV_EMULATION=y
-# Sun4i DRM for Allwinner Display Engine
+# Sun4i DRM for Allwinner Display Engine (mixer, TCON, etc.)
 CONFIG_DRM_SUN4I=y
 CONFIG_DRM_SUN8I_MIXER=y
 CONFIG_DRM_SUN8I_TCON_TOP=y
-# HDMI encoder (handles both old A10 and H6/H616 compatible paths)
-CONFIG_DRM_SUN4I_HDMI=y
-CONFIG_DRM_SUN4I_HDMI_CEC=y
-# H6-compatible HDMI PHY — REQUIRED for H616 HDMI to link up.
-# Without this the encoder mode-sets (causing screen flashes) but the
-# PHY handshake never completes, so no actual pixels reach the panel.
+# H616 uses Synopsys DesignWare HDMI (DW-HDMI) — NOT the old sun4i HDMI.
+# DRM_SUN4I_HDMI is for A10/A20-era hardware and must NOT be set on H616.
+# DRM_SUN8I_DW_HDMI covers: H3, H5, A64, H6, H616 (via H6 fallback compat).
+# DRM_SUN8I_DW_HDMI selects DRM_DW_HDMI automatically.
+CONFIG_DRM_SUN8I_DW_HDMI=y
+# H6-compatible HDMI PHY — H616 variant tables added by patch 001.
 CONFIG_DRM_SUN50I_HDMI_PHY=y
 # Enable KMS framebuffer for SDL2/Kivy DRM backend
 CONFIG_DRM_KMS_HELPER=y

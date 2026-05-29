@@ -126,7 +126,11 @@
 	};
 
 	hdmi: hdmi@5500000 {
-		compatible = "allwinner,sun50i-h616-dw-hdmi";
+		// H616 uses the H6-compatible DW-HDMI IP.
+		// In kernel 6.6 sun8i_dw_hdmi.c does not yet have an H616
+		// entry; the H6 fallback makes the DRM_SUN8I_DW_HDMI driver bind.
+		compatible = "allwinner,sun50i-h616-dw-hdmi",
+		             "allwinner,sun50i-h6-dw-hdmi";
 		reg = <0x05500000 0x10000>;
 		reg-io-width = <1>;
 		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
