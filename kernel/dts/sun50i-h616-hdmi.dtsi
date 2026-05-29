@@ -1,20 +1,30 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-// H616 HDMI and Display Engine support overlay
-// Adds nodes not present in mainline 6.6.30 sun50i-h616.dtsi
-// To be included by board DTS files that need HDMI output
+// H616 Display Engine + HDMI overlay for Linux 6.6.30
+//
+// Adds nodes absent from mainline sun50i-h616.dtsi:
+//   de_clk  (DE33 internal CCU)  @ 0x01000000
+//   mixer0                        @ 0x01100000
+//   tcon_top                      @ 0x05070000
+//   tcon_tv                       @ 0x05051000
+//   hdmi + hdmi_phy               @ 0x05500000 / 0x05510000
+//
+// The PWM node already exists in sun50i-h616.dtsi — do NOT add it here.
+//
+// Clock indices used below for DE sub-CCU (de_clk) output clocks:
+//   0 = bus (gate),  1 = mod (rate)
+//
+// Clock indices used for tcon_top output clocks:
+//   2 = CLK_TCON_TOP_TV0
+//   (sun8i-tcon-top.h NOT included — its macros clash with H616 CCU header)
+//
+// HDCP: H616 has no HDCP block — CLK_HDCP / RST_BUS_HDCP do not exist in
+//   sun50i-h616-ccu.h.  Only the 4 standard HDMI clocks are referenced.
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/sun50i-h616-ccu.h>
 #include <dt-bindings/reset/sun50i-h616-ccu.h>
 
-// Note: sun8i-de2.h and sun8i-tcon-top.h define macros (CLK_BUS_DE,
-// RST_BUS_DE, CLK_TCON_TOP_TV0 ...) that collide with identically-named
-// macros in sun50i-h616-ccu.h.  To avoid silent wrong-value substitution,
-// those headers are NOT included here.  Raw integer indices are used instead
-// for references into the DE sub-CCU and TCON-top clocks:
-//   DE sub-CCU:   0 = bus clock, 1 = module clock / reset
-//   TCON-top:     2 = CLK_TCON_TOP_TV0
-
+// ── display-engine virtual device (pipeline description) ─────────────────────
 &{/} {
 	de: display-engine {
 		compatible = "allwinner,sun50i-h6-display-engine";
@@ -23,54 +33,41 @@
 	};
 };
 
+// ── DE, TCON, HDMI nodes — flat under /soc ───────────────────────────────────
 &{/soc} {
-	// ── Display Engine 3.3 bus ─────────────────────────────────────────────
-	// The H616 DE3.3 is register-compatible with H6 DE3.
-	// Base address 0x01000000, 4 MiB span.
-	//   0x01000000  DE sub-CCU (de_clk) — controls DE internal clocks
-	//   0x01100000  mixer0
-	de_bus: bus@1000000 {
-		compatible = "allwinner,sun50i-h616-de33", "simple-bus";
-		reg = <0x01000000 0x400000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
+	// DE33 internal clock controller.
+	// Lives at the very base of the DE MMIO window (0x01000000).
+	// The ccu-sun8i-de2.c driver probes this node and gates/rates
+	// the downstream mixer clocks.
+	de_clk: clock-controller@1000000 {
+		compatible = "allwinner,sun50i-h616-de33-clk";
+		reg = <0x01000000 0x10000>;
+		clocks = <&ccu CLK_BUS_DE>, <&ccu CLK_DE>;
+		clock-names = "bus", "mod";
+		resets = <&ccu RST_BUS_DE>;
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+	};
 
-		// DE internal clock controller.
-		// Inputs:  CLK_BUS_DE and CLK_DE from the H616 main CCU.
-		// Outputs: internal bus (index 0) and mod (index 1) clocks
-		//          consumed by mixer0.
-		de_clk: clock-controller@0 {
-			compatible = "allwinner,sun50i-h616-de33-clk";
-			reg = <0x0 0x10000>;
-			clocks = <&ccu CLK_BUS_DE>, <&ccu CLK_DE>;
-			clock-names = "bus", "mod";
-			resets = <&ccu RST_BUS_DE>;
-			#clock-cells = <1>;
-			#reset-cells = <1>;
-		};
+	// Display mixer 0.
+	// Register-compatible with H6 DE3 mixer; kernel 6.6 sun8i_mixer.c
+	// matches on "allwinner,sun50i-h6-de3-mixer-0".
+	mixer0: mixer@1100000 {
+		compatible = "allwinner,sun50i-h6-de3-mixer-0";
+		reg = <0x01100000 0x100000>;
+		clocks = <&de_clk 0>, <&de_clk 1>;
+		clock-names = "bus", "mod";
+		resets = <&de_clk 0>;
 
-		// Display mixer 0.  Uses H6 compatible — H616 mixer is register-
-		// compatible and kernel 6.6 sun8i_mixer.c only has the H6 entry.
-		// Clocks/resets reference de_clk by raw index to avoid header
-		// macro collisions (see note at top of file).
-		mixer0: mixer@100000 {
-			compatible = "allwinner,sun50i-h6-de3-mixer-0";
-			reg = <0x100000 0x100000>;
-			clocks = <&de_clk 0>, <&de_clk 1>;
-			clock-names = "bus", "mod";
-			resets = <&de_clk 0>;
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-			ports {
-				#address-cells = <1>;
-				#size-cells = <0>;
+			mixer0_out: port@1 {
+				reg = <1>;
 
-				mixer0_out: port@1 {
-					reg = <1>;
-
-					mixer0_out_tcon_top_mixer0: endpoint {
-						remote-endpoint = <&tcon_top_mixer0_in_mixer0>;
-					};
+				mixer0_out_tcon_top_mixer0: endpoint {
+					remote-endpoint = <&tcon_top_mixer0_in_mixer0>;
 				};
 			};
 		};
@@ -159,22 +156,22 @@
 		};
 	};
 
+	// DW-HDMI transmitter.
+	// H616 is register-compatible with H6; the H6 fallback compat string
+	// makes sun8i_dw_hdmi.c bind on kernels that don't yet have an H616
+	// entry in its OF match table.
+	// H616 has NO HDCP block — do not add hdcp/hdcp-bus clock-names.
 	hdmi: hdmi@5500000 {
-		// H616 uses the H6-compatible DW-HDMI IP.
-		// In kernel 6.6 sun8i_dw_hdmi.c does not yet have an H616
-		// entry; the H6 fallback makes the DRM_SUN8I_DW_HDMI driver bind.
 		compatible = "allwinner,sun50i-h616-dw-hdmi",
 			     "allwinner,sun50i-h6-dw-hdmi";
 		reg = <0x05500000 0x10000>;
 		reg-io-width = <1>;
 		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&ccu CLK_BUS_HDMI>, <&ccu CLK_HDMI_SLOW>,
-			 <&ccu CLK_HDMI>, <&ccu CLK_HDMI_CEC>,
-			 <&ccu CLK_HDCP>, <&ccu CLK_BUS_HDCP>;
-		clock-names = "iahb", "isfr", "tmds", "cec", "hdcp",
-			      "hdcp-bus";
-		resets = <&ccu RST_BUS_HDMI_SUB>, <&ccu RST_BUS_HDCP>;
-		reset-names = "ctrl", "hdcp";
+			 <&ccu CLK_HDMI>, <&ccu CLK_HDMI_CEC>;
+		clock-names = "iahb", "isfr", "tmds", "cec";
+		resets = <&ccu RST_BUS_HDMI_SUB>;
+		reset-names = "ctrl";
 		phys = <&hdmi_phy>;
 		phy-names = "phy";
 		status = "disabled";
@@ -205,16 +202,6 @@
 		resets = <&ccu RST_BUS_HDMI_SUB>;
 		reset-names = "phy";
 		#phy-cells = <0>;
-	};
-
-	pwm: pwm@300a000 {
-		compatible = "allwinner,sun50i-h616-pwm";
-		reg = <0x0300a000 0x400>;
-		clocks = <&osc24M>, <&ccu CLK_BUS_PWM>;
-		clock-names = "mod", "bus";
-		resets = <&ccu RST_BUS_PWM>;
-		#pwm-cells = <3>;
-		status = "disabled";
 	};
 };
 

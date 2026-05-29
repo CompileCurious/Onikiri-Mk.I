@@ -108,7 +108,7 @@
 
 	backlight: backlight {
 		compatible = "pwm-backlight";
-		pwms = <&pwm 0 50000 0>;
+		pwms = <&pwm 0 50000>;
 		brightness-levels = <0 16 32 48 64 80 96 128 160 192 224 255>;
 		default-brightness-level = <9>;
 		enable-gpios = <&pio 7 19 GPIO_ACTIVE_HIGH>;  // PH19 backlight enable
