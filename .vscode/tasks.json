@@ -2,6 +2,25 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "git-log-check",
+      "type": "shell",
+      "command": "cd /workspaces/Onikiri-Mk.I && git --no-pager log --oneline -8 && echo '---STAT---' && git --no-pager diff origin/Default HEAD -- kernel/dts/sun50i-h616-hdmi.dtsi config/uboot/boot.cmd rootfs/etc/init.d/S03boot-import .github/workflows/build-image.yml | head -60",
+      "options": { "cwd": "/workspaces/Onikiri-Mk.I" },
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "git-commit-drm-diagnostics",
+      "type": "shell",
+      "command": "cd /workspaces/Onikiri-Mk.I && git add kernel/dts/sun50i-h616-hdmi.dtsi config/uboot/boot.cmd rootfs/etc/init.d/rcS rootfs/etc/init.d/S03boot-import .github/workflows/build-image.yml && git diff --cached --stat && git commit -m 'fix: DRM diagnostics — fallback compatibles, drm.debug=0x3f, dmesg to FAT' -m 'Add H6 fallback compatibles to de_clk and hdmi_phy so the DRM pipeline probes even if patches 001/002 had hunk-offset mismatches against 6.6.30.\\n\\nWrite dmesg.txt to the ONIKIRI FAT partition on every boot via S03boot-import (which already mounts p1), so the kernel log can be read on any PC.\\n\\nIncrease drm.debug from 0 to 0x3f for full DRM trace in dmesg output.\\n\\nBump rootfs cache key to v3 to force rebuild with updated init scripts.' && git push origin HEAD:Default 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",
+      "options": {
+        "cwd": "/workspaces/Onikiri-Mk.I"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
       "label": "git-push-ci-fixes",
       "type": "shell",
       "command": "( cd /workspaces/Onikiri-Mk.I && git add onikiri/modules/hid_gadget.py onikiri/ui/bridge.py onikiri/ui/assets/index.html onikiri/ui/assets/app.js && git commit -m 'feat: HID device ID dropdown with add/remove custom profiles' && git push origin HEAD:Default ) 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",

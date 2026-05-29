@@ -1,4 +1,9 @@
-[copilot/onikiri-mk-i-lw-pentesting-system 62df68c] feat: HID device ID dropdown with add/remove custom profiles
- 4 files changed, 211 insertions(+), 21 deletions(-)
-To https://github.com/CompileCurious/Onikiri-Mk.I
-   82bddf9..62df68c  HEAD -> Default
+On branch Default
+Your branch is up to date with 'origin/Default'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .vscode/new_job.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
