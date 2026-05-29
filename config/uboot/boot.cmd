@@ -8,10 +8,11 @@
 #   4. Boot via booti
 
 # ── Display / environment ─────────────────────────────────────────────────────
-# UART first so /dev/console resolves there; tty1 (framebuffer) gets all
-# messages too via the multi-console path. ignore_loglevel ensures kernel
-# messages appear on screen during bring-up.
+# Force HDMI output mode for the internal 1024x600 panel.
+# Without this the DRM driver relies on EDID (which the internal panel
+# doesn't expose via HPD), and no mode is set — resulting in a blank screen.
 setenv bootargs "console=ttyS0,115200n8 console=tty1 \
+video=HDMI-A-1:1024x600-24@60 \
 root=/dev/ram0 rdinit=/init rofs_device=/dev/mmcblk0p2 \
 loglevel=7 ignore_loglevel \
 fbcon=map:0 drm.debug=0 \

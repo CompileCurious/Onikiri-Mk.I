@@ -3,21 +3,23 @@
 # Executed by BusyBox init as sysinit.
 # Target: < 1 second total wall time for this script.
 
-# ── Strict mode ───────────────────────────────────────────────────────────────
-set -e
+# NOTE: do NOT use set -e here. The initramfs already moves /proc, /sys,
+# /dev, /run, /tmp into the new root via mount --move before switch_root.
+# Re-mounting those filesystems would fail with EBUSY and kill the entire
+# init sequence. Use explicit error handling where needed instead.
 
-# ── Mount virtual filesystems (parallel where possible) ──────────────────────
-mount -t proc     proc     /proc          -o nosuid,noexec,nodev
-mount -t sysfs    sysfs    /sys           -o nosuid,noexec,nodev
-mount -t devtmpfs devtmpfs /dev           -o mode=0755,nosuid
+# ── Mount virtual filesystems (idempotent — skip if already mounted) ──────
+mountpoint -q /proc    || mount -t proc     proc     /proc     -o nosuid,noexec,nodev
+mountpoint -q /sys     || mount -t sysfs    sysfs    /sys      -o nosuid,noexec,nodev
+mountpoint -q /dev     || mount -t devtmpfs devtmpfs /dev      -o mode=0755,nosuid
 
 # devpts for PTY support (needed by some tools)
 mkdir -p /dev/pts
-mount -t devpts devpts /dev/pts -o mode=0620,gid=5,nosuid,noexec
+mountpoint -q /dev/pts || mount -t devpts devpts /dev/pts -o mode=0620,gid=5,nosuid,noexec
 
 # tmpfs for runtime state
-mount -t tmpfs tmpfs /run  -o mode=0755,nosuid,nodev,size=64m
-mount -t tmpfs tmpfs /tmp  -o mode=1777,nosuid,nodev,size=32m
+mountpoint -q /run     || mount -t tmpfs tmpfs /run  -o mode=0755,nosuid,nodev,size=64m
+mountpoint -q /tmp     || mount -t tmpfs tmpfs /tmp  -o mode=1777,nosuid,nodev,size=32m
 
 # ── Hostname ──────────────────────────────────────────────────────────────────
 hostname -F /etc/hostname

@@ -92,6 +92,11 @@
 		compatible = "hdmi-connector";
 		type = "d";  // Micro HDMI (internal connection to LCD panel)
 
+		// The internal 7" panel does not implement HDMI HPD (hot-plug
+		// detect). Without no-hpd the driver waits for a HPD pulse that
+		// never comes and never sets a display mode.
+		no-hpd;
+
 		port {
 			hdmi_con_in: endpoint {
 				remote-endpoint = <&hdmi_out_con>;
