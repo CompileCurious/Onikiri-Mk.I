@@ -8,9 +8,9 @@
 #   4. Boot via booti
 
 # ── Display / environment ─────────────────────────────────────────────────────
-setenv bootargs "console=ttyS0,115200n8 \
+setenv bootargs "console=tty1 console=ttyS0,115200n8 \
 root=/dev/ram0 rdinit=/init rofs_device=/dev/mmcblk0p2 \
-quiet loglevel=2 \
+loglevel=4 \
 fbcon=map:0 drm.debug=0 \
 zswap.enabled=1 zswap.compressor=lz4 \
 usbcore.autosuspend=-1 \

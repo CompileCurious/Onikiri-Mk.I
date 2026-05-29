@@ -251,11 +251,23 @@ CONFIG_PRINTK_TIME=y
 # Smaller log buffer for reduced memory footprint
 CONFIG_LOG_BUF_SHIFT=14
 
+# ── Binary formats ───────────────────────────────────────────────────────────
+# Required for ELF executables (busybox, python3) and shell scripts (#!/bin/sh)
+CONFIG_BINFMT_ELF=y
+CONFIG_BINFMT_SCRIPT=y
+
+# ── Initramfs ─────────────────────────────────────────────────────────────────
+# REQUIRED: kernel must decompress/load initramfs.cpio.gz at boot.
+# The boot flow is: kernel → initramfs init → mount squashfs p2 → switch_root.
+# Without this, root=/dev/ram0 causes an immediate kernel panic (blank screen).
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_INITRAMFS_SOURCE=""
+CONFIG_RD_GZIP=y
+CONFIG_RD_ZSTD=y
+
 # ── Fast-boot optimisations ────────────────────────────────────────────────────
 # No module loading — all drivers compiled in (CONFIG_MODULES not set)
 # CONFIG_MODULES is not set
-# Disable initrd (rootfs is on MMC, squashfs mounted directly)
-# CONFIG_BLK_DEV_INITRD is not set
 # Reduce RCU overhead
 CONFIG_RCU_BOOST=y
 CONFIG_HZ_250=y
