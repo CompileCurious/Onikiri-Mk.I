@@ -7,9 +7,18 @@ docker_optimizations=off
 rootdev=/dev/ram0
 rootfstype=ramfs
 
-# Use board DTB produced by this tree
-fdtfile=sun50i-h616-onikiri.dtb
+# Vendor-style DTB name used by CB1 images
+fdtfile=sun50i-h616-bigtreetech-cb1-sd.dtb
 overlay_prefix=sun50i-h616
 
+# Mirror vendor pad7 control toggles present in CB1 image
+BTT_PAD7=ON
+TOUCH_VIBRATION=OFF
+TOUCH_SOUND=OFF
+AUTO_BRIGHTNESS=OFF
+
 # Force panel mode and carry existing Onikiri boot parameters
-extraargs=rdinit=/init rofs_device=/dev/mmcblk0p2 video=HDMI-A-1:1024x600@60e ignore_loglevel fbcon=map:0 drm.debug=0x3f zswap.enabled=1 zswap.compressor=lz4 usbcore.autosuspend=-1 coherent_pool=2M cma=32M panic=10
+extraargs=rdinit=/init rofs_device=/dev/mmcblk0p2 video=HDMI-A-1:1024x600-24@60 ignore_loglevel fbcon=map:0 drm.debug=0x3f zswap.enabled=1 zswap.compressor=lz4 usbcore.autosuspend=-1 coherent_pool=2M cma=32M panic=10
+
+## uncomment for pad7 vibration motor gpio
+#overlays=pad7_vibration
