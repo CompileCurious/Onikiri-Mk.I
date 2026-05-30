@@ -65,17 +65,24 @@ if [ ! -x /newroot/sbin/init ]; then
 fi
 
 # ── Save kernel log to FAT boot partition ────────────────────────────────────
-# p1 (vfat, ONIKIRI) is readable on any OS. Write dmesg here, in the
-# initramfs ramfs, so we never hit read-only SquashFS or failed userspace
-# init scripts. mmcblk0p1 must exist if mmcblk0p2 was found above.
-# /mnt is pre-created in the cpio stage by build.sh.
-if mount -t vfat /dev/mmcblk0p1 /mnt -o rw,noatime; then
-    /bin/busybox dmesg > /mnt/dmesg.txt
-    /bin/busybox sync
-    umount /mnt 2>/dev/null || true
-    echo "dmesg.txt written to FAT boot partition"
+# Derive p1 from the device that successfully mounted p2 — avoids hardcoding
+# mmcblk0p1 when the SD card might actually be mmcblk1 or mmcblk2.
+# e.g.  /dev/mmcblk0p2 → /dev/mmcblk0p1
+#        /dev/mmcblk2p2 → /dev/mmcblk2p1
+BOOT_PART="${ROFS_DEVICE%p*}p1"
+echo "Saving dmesg to ${BOOT_PART} (FAT boot partition)..."
+if [ -b "${BOOT_PART}" ]; then
+    if mount -t vfat "${BOOT_PART}" /mnt \
+            -o rw,noatime,codepage=437,iocharset=utf8; then
+        /bin/busybox dmesg > /mnt/dmesg.txt
+        /bin/busybox sync
+        umount /mnt
+        echo "dmesg.txt written OK"
+    else
+        echo "ERROR: mount ${BOOT_PART} failed — check NLS/codepage kernel config"
+    fi
 else
-    echo "WARNING: could not mount /dev/mmcblk0p1 — dmesg.txt not written"
+    echo "ERROR: ${BOOT_PART} is not a block device"
 fi
 
 # ── Move virtual filesystems into the new root ────────────────────────────────
