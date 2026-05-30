@@ -86,21 +86,15 @@
 		post-power-on-delay-ms = <200>;
 	};
 
-	// ── HDMI connector (internal 7" IPS, 1024×600) ────────────────────────
+	// ── Integrated display panel sink (fixed 1024x600 timing) ──────────────
 
-	hdmi_con: connector {
-		compatible = "hdmi-connector";
-		type = "d";  // Micro HDMI (internal connection to LCD panel)
+	panel: panel {
+		compatible = "simple-panel";
+		backlight = <&backlight>;
+		power-supply = <&reg_dldo1>;
+		width-mm = <154>;
+		height-mm = <86>;
 
-		// The internal 7" panel does not implement HDMI HPD (hot-plug
-		// detect). Without no-hpd the driver waits for a HPD pulse that
-		// never comes and never sets a display mode.
-		no-hpd;
-
-		/*
-		 * Fixed panel timing for the integrated 1024x600 LCD path.
-		 * Keep this in DT so mode selection does not depend solely on EDID.
-		 */
 		display-timings {
 			native-mode = <&timing0>;
 
@@ -122,7 +116,7 @@
 		};
 
 		port {
-			hdmi_con_in: endpoint {
+			panel_in: endpoint {
 				remote-endpoint = <&hdmi_out_con>;
 			};
 		};
@@ -322,7 +316,7 @@
 
 &hdmi_out {
 	hdmi_out_con: endpoint {
-		remote-endpoint = <&hdmi_con_in>;
+		remote-endpoint = <&panel_in>;
 	};
 };
 
