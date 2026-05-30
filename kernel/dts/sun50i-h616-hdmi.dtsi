@@ -10,8 +10,16 @@
 //
 // The PWM node already exists in sun50i-h616.dtsi — do NOT add it here.
 //
-// Clock indices used below for DE sub-CCU (de_clk) output clocks:
-//   0 = bus (gate),  1 = mod (rate)
+// Clock indices used below for DE sub-CCU (de_clk) output clocks.
+// Source: include/dt-bindings/clock/sun8i-de2.h
+//   CLK_BUS_MIXER0 = 0   (bus gate for mixer0)
+//   CLK_BUS_MIXER1 = 1   (bus gate for mixer1 — NOT the mixer0 mod clock!)
+//   CLK_BUS_WB     = 2
+//   CLK_MIXER0     = 3   (rate/mod clock for mixer0)
+//   CLK_MIXER1     = 4
+//   CLK_WB         = 5
+// Reset indices (separate namespace, same provider):
+//   RST_MIXER0 = 0
 //
 // Clock indices used for tcon_top output clocks:
 //   2 = CLK_TCON_TOP_TV0
@@ -58,7 +66,7 @@
 	mixer0: mixer@1100000 {
 		compatible = "allwinner,sun50i-h6-de3-mixer-0";
 		reg = <0x01100000 0x100000>;
-		clocks = <&de_clk 0>, <&de_clk 1>;
+		clocks = <&de_clk 0>, <&de_clk 3>;
 		clock-names = "bus", "mod";
 		resets = <&de_clk 0>;
 
@@ -82,7 +90,9 @@
 		clocks = <&ccu CLK_BUS_TCON_TOP>,
 			 <&ccu CLK_TCON_TV0>;
 		clock-names = "bus", "tcon-tv0";
-		clock-output-names = "tcon-top-tv0";
+		clock-output-names = "tcon-top-tv0",
+				     "tcon-top-tv1",
+				     "tcon-top-hdmi";
 		resets = <&ccu RST_BUS_TCON_TOP>;
 		#clock-cells = <1>;
 
