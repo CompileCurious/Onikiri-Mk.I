@@ -12,7 +12,7 @@
 # Without this the DRM driver relies on EDID (which the internal panel
 # doesn't expose via HPD), and no mode is set — resulting in a blank screen.
 setenv bootargs "console=ttyS0,115200n8 console=tty1 \
-video=HDMI-A-1:1024x600-24@60 \
+video=HDMI-A-1:1024x600@60e video=HDMI-A-2:1024x600@60e video=DVI-D-1:1024x600@60e \
 root=/dev/ram0 rdinit=/init rofs_device=/dev/mmcblk0p2 \
 loglevel=7 ignore_loglevel \
 fbcon=map:0 drm.debug=0x3f \
