@@ -180,6 +180,7 @@
 		reg = <0x05500000 0x10000>;
 		reg-io-width = <1>;
 		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
+		allwinner,force-connected;
 		clocks = <&ccu CLK_BUS_HDMI>, <&ccu CLK_HDMI_SLOW>,
 			 <&ccu CLK_HDMI>, <&ccu CLK_HDMI_CEC>;
 		clock-names = "iahb", "isfr", "tmds", "cec";

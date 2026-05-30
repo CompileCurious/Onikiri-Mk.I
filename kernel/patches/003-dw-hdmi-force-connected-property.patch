@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: GitHub Copilot <copilot@github.com>
+Date: Sat, 30 May 2026 00:00:00 +0000
+Subject: drm: dw-hdmi: support allwinner,force-connected DT property
+
+Some embedded HDMI panels (including internal bridge boards) expose no
+usable HPD signal and no reliable EDID path. In that setup, the generic
+DW-HDMI detect path can keep reporting disconnected and block modeset.
+
+Allow boards to opt in to forced connector status via a DT boolean on the
+DW-HDMI controller node:
+
+  allwinner,force-connected;
+
+When present, detect always returns connector_status_connected.
+
+---
+ drivers/gpu/drm/bridge/synopsys/dw-hdmi.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+index 111111111111..222222222222 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+@@ -2447,6 +2447,13 @@ static void dw_hdmi_update_phy_mask(struct dw_hdmi *hdmi)
+ static enum drm_connector_status dw_hdmi_detect(struct dw_hdmi *hdmi)
+ {
+ 	enum drm_connector_status result;
++
++	/*
++	 * Boards with internal HDMI bridges may not expose HPD/EDID. Allow a
++	 * DT opt-in override to force connector presence and unblock modeset.
++	 */
++	if (hdmi->dev->of_node && of_property_read_bool(hdmi->dev->of_node, "allwinner,force-connected"))
++		return connector_status_connected;
+ 
+ 	result = hdmi->phy.ops->read_hpd(hdmi, hdmi->phy.data);
+ 	hdmi->last_connector_result = result;
+-- 
+2.43.0
