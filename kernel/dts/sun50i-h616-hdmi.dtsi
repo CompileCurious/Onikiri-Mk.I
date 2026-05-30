@@ -85,9 +85,9 @@
 		};
 	};
 
-	tcon_top: tcon-top@5070000 {
+	tcon_top: tcon-top@6510000 {
 		compatible = "allwinner,sun50i-h6-tcon-top";
-		reg = <0x05070000 0x1000>;
+		reg = <0x06510000 0x1000>;
 		clocks = <&ccu CLK_BUS_TCON_TOP>,
 			 <&ccu CLK_TCON_TV0>;
 		clock-names = "bus", "tcon-tv0";
@@ -138,10 +138,10 @@
 		};
 	};
 
-	tcon_tv: lcd-controller@5051000 {
+	tcon_tv: lcd-controller@6515000 {
 		compatible = "allwinner,sun50i-h6-tcon-tv";
-		reg = <0x05051000 0x1000>;
-		interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
+		reg = <0x06515000 0x1000>;
+		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&ccu CLK_BUS_TCON_TV0>,
 			 <&tcon_top 0>;
 		clock-names = "ahb", "tcon-ch1";
@@ -175,9 +175,9 @@
 	// makes sun8i_dw_hdmi.c bind on kernels that don't yet have an H616
 	// entry in its OF match table.
 	// H616 has NO HDCP block — do not add hdcp/hdcp-bus clock-names.
-	hdmi: hdmi@5500000 {
+	hdmi: hdmi@6000000 {
 		compatible = "allwinner,sun50i-h6-dw-hdmi";
-		reg = <0x05500000 0x10000>;
+		reg = <0x06000000 0x10000>;
 		reg-io-width = <1>;
 		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
 		allwinner,force-connected;
@@ -208,11 +208,11 @@
 		};
 	};
 
-	hdmi_phy: hdmi-phy@5510000 {
+	hdmi_phy: hdmi-phy@6010000 {
 		// Use H6 PHY tables for now; this avoids H616-specific table/path
 		// regressions and has proven stable for 1024x600/60 on H616 boards.
 		compatible = "allwinner,sun50i-h6-hdmi-phy";
-		reg = <0x05510000 0x10000>;
+		reg = <0x06010000 0x10000>;
 		clocks = <&ccu CLK_BUS_HDMI>, <&ccu CLK_HDMI_SLOW>;
 		clock-names = "bus", "mod";
 		resets = <&ccu RST_BUS_HDMI_SUB>;
