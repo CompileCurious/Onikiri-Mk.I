@@ -22,8 +22,11 @@
 //   RST_MIXER0 = 0
 //
 // Clock indices used for tcon_top output clocks:
-//   2 = CLK_TCON_TOP_TV0
-//   (sun8i-tcon-top.h NOT included — its macros clash with H616 CCU header)
+// Source: include/dt-bindings/clock/sun8i-tcon-top.h
+//   CLK_TCON_TOP_TV0 = 0
+//   CLK_TCON_TOP_TV1 = 1
+//   CLK_TCON_TOP_DSI = 2
+// (sun8i-tcon-top.h NOT included — its macros clash with H616 CCU header)
 //
 // HDCP: H616 has no HDCP block — CLK_HDCP / RST_BUS_HDCP do not exist in
 //   sun50i-h616-ccu.h.  Only the 4 standard HDMI clocks are referenced.
@@ -92,7 +95,7 @@
 		clock-names = "bus", "tcon-tv0";
 		clock-output-names = "tcon-top-tv0",
 				     "tcon-top-tv1",
-				     "tcon-top-hdmi";
+				     "tcon-top-dsi";
 		resets = <&ccu RST_BUS_TCON_TOP>;
 		#clock-cells = <1>;
 
@@ -142,7 +145,7 @@
 		reg = <0x05051000 0x1000>;
 		interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&ccu CLK_BUS_TCON_TV0>,
-			 <&tcon_top 2>;
+			 <&tcon_top 0>;
 		clock-names = "ahb", "tcon-ch1";
 		resets = <&ccu RST_BUS_TCON_TV0>;
 		reset-names = "lcd";
