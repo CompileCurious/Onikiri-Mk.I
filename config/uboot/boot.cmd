@@ -28,7 +28,8 @@ mmc part
 
 load mmc 0:1 ${kernel_addr_r}  Image
 load mmc 0:1 ${ramdisk_addr_r} initramfs.cpio.gz
+setenv ramdisk_size ${filesize}
 load mmc 0:1 ${fdt_addr_r}     sun50i-h616-onikiri.dtb
 
 # ── Boot ───────────────────────────────────────────────────────────────────────────
-booti ${kernel_addr_r} ${ramdisk_addr_r}:${filesize} ${fdt_addr_r}
+booti ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr_r}
