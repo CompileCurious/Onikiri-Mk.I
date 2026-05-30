@@ -8,7 +8,6 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include "sun50i-h616.dtsi"
-#include "sun50i-h616-hdmi.dtsi"
 
 / {
 	model = "Onikiri Mk.I (BigTreeTech Pad 7 CB1)";
