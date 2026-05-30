@@ -51,8 +51,10 @@
 	// The ccu-sun8i-de2.c driver probes this node and gates/rates
 	// the downstream mixer clocks.
 	de_clk: clock-controller@1000000 {
-		// Use the upstream H6 DE3 clock provider for stability on 6.6.x.
-		compatible = "allwinner,sun50i-h6-de3-clk";
+		// Prefer H616 DE clock provider when patch 002 is present.
+		// Fall back to H6-compatible provider for portability.
+		compatible = "allwinner,sun50i-h616-de33-clk",
+			     "allwinner,sun50i-h6-de3-clk";
 		reg = <0x01000000 0x10000>;
 		clocks = <&ccu CLK_BUS_DE>, <&ccu CLK_DE>;
 		clock-names = "bus", "mod";
@@ -176,7 +178,8 @@
 	// entry in its OF match table.
 	// H616 has NO HDCP block — do not add hdcp/hdcp-bus clock-names.
 	hdmi: hdmi@6000000 {
-		compatible = "allwinner,sun50i-h6-dw-hdmi";
+		compatible = "allwinner,sun50i-h616-dw-hdmi",
+			     "allwinner,sun50i-h6-dw-hdmi";
 		reg = <0x06000000 0x10000>;
 		reg-io-width = <1>;
 		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
@@ -209,9 +212,10 @@
 	};
 
 	hdmi_phy: hdmi-phy@6010000 {
-		// Use H6 PHY tables for now; this avoids H616-specific table/path
-		// regressions and has proven stable for 1024x600/60 on H616 boards.
-		compatible = "allwinner,sun50i-h6-hdmi-phy";
+		// Prefer H616 PHY tuning tables when patch 001 is present.
+		// Fall back to H6-compatible PHY profile otherwise.
+		compatible = "allwinner,sun50i-h616-hdmi-phy",
+			     "allwinner,sun50i-h6-hdmi-phy";
 		reg = <0x06010000 0x10000>;
 		clocks = <&ccu CLK_BUS_HDMI>, <&ccu CLK_HDMI_SLOW>;
 		clock-names = "bus", "mod";
