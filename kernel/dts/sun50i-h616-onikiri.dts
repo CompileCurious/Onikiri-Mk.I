@@ -97,6 +97,30 @@
 		// never comes and never sets a display mode.
 		no-hpd;
 
+		/*
+		 * Fixed panel timing for the integrated 1024x600 LCD path.
+		 * Keep this in DT so mode selection does not depend solely on EDID.
+		 */
+		display-timings {
+			native-mode = <&timing0>;
+
+			timing0: 1024x600 {
+				clock-frequency = <51000000>;
+				hactive = <1024>;
+				vactive = <600>;
+				hfront-porch = <160>;
+				hsync-len = <20>;
+				hback-porch = <140>;
+				vfront-porch = <12>;
+				vsync-len = <3>;
+				vback-porch = <20>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <1>;
+				pixelclk-active = <0>;
+			};
+		};
+
 		port {
 			hdmi_con_in: endpoint {
 				remote-endpoint = <&hdmi_out_con>;
