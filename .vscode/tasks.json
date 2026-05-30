@@ -4,7 +4,7 @@
     {
       "label": "git-log-check",
       "type": "shell",
-      "command": "cd /workspaces/Onikiri-Mk.I && git add boot/initramfs/init build/build.sh && git commit -m 'fix: write dmesg.txt from initramfs before switch_root' -m 'S03boot-import approach depended on too many userspace steps. Writing\ndmesg in the initramfs init script is simpler: the MMC device is already\nconfirmed present, we are in a writable ramfs, and nothing can fail before us.\n\nMount p1 (FAT, ONIKIRI) rw, write dmesg.txt, unmount — before switch_root.\nAlso pre-create /mnt in the initramfs cpio stage.' && git push origin HEAD:Default 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",
+      "command": "cd /workspaces/Onikiri-Mk.I && git add kernel/h616_onikiri_defconfig boot/initramfs/init .github/workflows/build-image.yml && git commit -m 'fix: add NLS codepage config so vfat mount works in initramfs' && git push origin HEAD:Default 2>&1 | tee /workspaces/Onikiri-Mk.I/.vscode/new_job.txt",
       "options": { "cwd": "/workspaces/Onikiri-Mk.I" },
       "presentation": { "reveal": "always", "panel": "new" }
     },
