@@ -551,7 +551,7 @@ build_image() {
     log "Building microSD image: ${FINAL_IMG}"
     "${REPO_ROOT}/build/mkimage.sh" \
         --kernel    "${KERNEL_SRC}/arch/arm64/boot/Image" \
-        --dtb       "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-pi.dtb" \
+        --dtb       "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb" \
         --initramfs "${BUILD_DIR}/initramfs.cpio.gz" \
         --rootfs    "${SQUASHFS_IMG}" \
         --output    "${FINAL_IMG}"

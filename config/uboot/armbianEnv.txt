@@ -7,8 +7,8 @@ docker_optimizations=off
 rootdev=/dev/ram0
 rootfstype=ramfs
 
-# Use upstream BigTreeTech board DTB from kernel build output
-fdtfile=sun50i-h616-bigtreetech-pi.dtb
+# Board DTB built from kernel/dts/sun50i-h616-onikiri.dts
+fdtfile=sun50i-h616-onikiri.dtb
 overlay_prefix=sun50i-h616
 
 # Mirror vendor pad7 control toggles present in CB1 image
