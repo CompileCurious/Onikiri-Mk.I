@@ -7,8 +7,8 @@ docker_optimizations=off
 rootdev=/dev/ram0
 rootfstype=ramfs
 
-# Vendor-style DTB name used by CB1 images
-fdtfile=sun50i-h616-bigtreetech-cb1-sd.dtb
+# Use upstream BigTreeTech board DTB from kernel build output
+fdtfile=sun50i-h616-bigtreetech-pi.dtb
 overlay_prefix=sun50i-h616
 
 # Mirror vendor pad7 control toggles present in CB1 image
