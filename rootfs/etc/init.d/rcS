@@ -67,6 +67,10 @@ mkdir -p \
 # are imported here on every boot before the supervisor starts.
 /etc/init.d/S03boot-import
 
+# ── Optional display bridge init (LT8619 hook) ───────────────────────────────
+# If /userdata/config/lt8619-init.txt exists, apply it before UI starts.
+sh /etc/init.d/S04display-bridge-init
+
 # ── Loopback interface ────────────────────────────────────────────────────────
 ip link set lo up
 

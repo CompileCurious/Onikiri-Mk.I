@@ -38,14 +38,33 @@
 # as a reference / backup and are re-imported on every boot.  To prevent
 # re-import, delete or rename the file on the boot partition.
 
-BOOT_DEV=/dev/mmcblk0p1
+BOOT_LABEL=ONIKIRI-BOOT
+BOOT_DEV=
 BOOT_MNT=/mnt/boot
 
 log() { echo "[S03boot-import] $*" >&2; }
 
+resolve_boot_dev() {
+    # Prefer filesystem label, then common mmc fallbacks.
+    if command -v blkid >/dev/null 2>&1; then
+        BOOT_DEV="$(blkid -L "${BOOT_LABEL}" 2>/dev/null || true)"
+    fi
+
+    if [ -z "${BOOT_DEV}" ]; then
+        for dev in /dev/mmcblk0p1 /dev/mmcblk1p1; do
+            if [ -b "${dev}" ]; then
+                BOOT_DEV="${dev}"
+                break
+            fi
+        done
+    fi
+}
+
+resolve_boot_dev
+
 # ── Bail if boot device is absent (dev/emulation without real SD card) ────────
-if ! [ -b "${BOOT_DEV}" ]; then
-    log "${BOOT_DEV} not present — skipping boot-partition import"
+if [ -z "${BOOT_DEV}" ] || ! [ -b "${BOOT_DEV}" ]; then
+    log "boot partition not found (label=${BOOT_LABEL}) — skipping boot-partition import"
     exit 0
 fi
 
@@ -115,7 +134,10 @@ fi
 dmesg > "${BOOT_MNT}/dmesg.txt" 2>/dev/null && {
     sync
     log "dmesg.txt written to boot partition"
-} || log "WARNING: dmesg write failed"
+} || {
+    log "WARNING: dmesg write failed"
+    echo "dmesg export failed from S03boot-import" > "${BOOT_MNT}/dmesg-export.failed" 2>/dev/null || true
+}
 
 umount "${BOOT_MNT}" 2>/dev/null || true
 

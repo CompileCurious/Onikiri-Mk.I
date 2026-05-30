@@ -39,6 +39,7 @@ bluez-tools             # btmgmt
 # ── System utilities (BusyBox provides most; extras listed) ──────────────────
 busybox-static          # init, sh, mount, ifconfig, dd, etc.
 kmod                    # modprobe, lsmod (if not in BusyBox)
+i2c-tools               # i2cdetect/i2cset for LT8619 bridge init
 e2fsprogs               # mkfs.ext4, e2fsck (for data partition)
 squashfs-tools          # unsquashfs (debug use only on target)
 dosfstools              # mkfs.fat (if re-formatting boot partition)

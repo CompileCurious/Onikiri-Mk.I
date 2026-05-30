@@ -1,0 +1,122 @@
+#!/bin/sh
+# /etc/init.d/S04display-bridge-init
+# Optional LT8619 bridge initialization hook for BTT Pad 7.
+#
+# If /userdata/config/lt8619-init.txt exists, each non-comment line must be:
+#   <bus> <addr> <reg> <val>
+# Example:
+#   1 0x3b 0x80 0x01
+#   1 0x3b 0x81 0x7f
+#
+# This script runs early in boot (from rcS) before the UI starts.
+
+LOG_FILE=/userdata/logs/display-bridge-init.log
+CONF_FILE=/userdata/config/lt8619-init.txt
+BOOT_LABEL=ONIKIRI-BOOT
+BOOT_DEV=
+BOOT_MNT=/mnt/boot
+
+log() {
+    local msg="[S04display-bridge-init] $*"
+    echo "$msg" >/dev/console 2>/dev/null || true
+    if [ -d /userdata/logs ]; then
+        echo "$msg" >>"$LOG_FILE" 2>/dev/null || true
+    fi
+}
+
+resolve_boot_dev() {
+    if command -v blkid >/dev/null 2>&1; then
+        BOOT_DEV="$(blkid -L "$BOOT_LABEL" 2>/dev/null || true)"
+    fi
+
+    if [ -z "$BOOT_DEV" ]; then
+        for dev in /dev/mmcblk0p1 /dev/mmcblk1p1; do
+            if [ -b "$dev" ]; then
+                BOOT_DEV="$dev"
+                break
+            fi
+        done
+    fi
+}
+
+probe_candidates() {
+    if ! command -v i2cdetect >/dev/null 2>&1; then
+        log "i2cdetect not found; install i2c-tools to enable bridge probing"
+        return
+    fi
+
+    for bus in 0 1 2 3 4 5; do
+        if [ ! -e "/dev/i2c-${bus}" ]; then
+            continue
+        fi
+
+        # Common LT8619 addresses seen on bridge boards.
+        map="$(i2cdetect -y "$bus" 2>/dev/null | tr -s ' ' | tr '\n' ' ')"
+        for addr in 2b 39 3b; do
+            echo "$map" | grep -q " $addr " && log "candidate bridge device at i2c-${bus} addr 0x${addr}"
+        done
+    done
+}
+
+apply_sequence() {
+    if [ ! -f "$CONF_FILE" ]; then
+        log "no $CONF_FILE provided; probe-only mode"
+        return
+    fi
+
+    if ! command -v i2cset >/dev/null 2>&1; then
+        log "i2cset not found; cannot apply bridge init sequence"
+        return
+    fi
+
+    log "applying LT8619 init sequence from $CONF_FILE"
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ''|\#*) continue ;;
+        esac
+
+        set -- $line
+        if [ "$#" -ne 4 ]; then
+            log "skip invalid line: $line"
+            continue
+        fi
+
+        bus="$1"
+        addr="$2"
+        reg="$3"
+        val="$4"
+
+        if i2cset -y "$bus" "$addr" "$reg" "$val" b 2>/dev/null; then
+            log "wrote bus=$bus addr=$addr reg=$reg val=$val"
+        else
+            log "write failed bus=$bus addr=$addr reg=$reg val=$val"
+        fi
+    done <"$CONF_FILE"
+}
+
+export_log_to_boot() {
+    resolve_boot_dev
+    [ -f "$LOG_FILE" ] || return
+    [ -n "$BOOT_DEV" ] || return
+    [ -b "$BOOT_DEV" ] || return
+
+    mkdir -p "$BOOT_MNT"
+    if mount -t vfat "$BOOT_DEV" "$BOOT_MNT" -o rw,noatime 2>/dev/null; then
+        if cp -f "$LOG_FILE" "$BOOT_MNT/display-bridge-init.log" 2>/dev/null; then
+            sync
+            log "exported display-bridge-init.log to boot partition"
+        else
+            log "WARNING: failed to write display-bridge-init.log to boot partition"
+        fi
+        umount "$BOOT_MNT" 2>/dev/null || true
+    else
+        log "WARNING: could not mount $BOOT_DEV to export log"
+    fi
+}
+
+log "start"
+probe_candidates
+apply_sequence
+export_log_to_boot
+log "done"
+exit 0
