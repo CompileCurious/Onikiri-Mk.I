@@ -86,37 +86,14 @@
 		post-power-on-delay-ms = <200>;
 	};
 
-	// ── Integrated display panel sink (fixed 1024x600 timing) ──────────────
+	// ── HDMI connector (CB1 baseline wiring) ────────────────────────────────
 
-	panel: panel {
-		compatible = "simple-panel";
-		backlight = <&backlight>;
-		power-supply = <&reg_dldo1>;
-		width-mm = <154>;
-		height-mm = <86>;
-
-		display-timings {
-			native-mode = <&timing0>;
-
-			timing0: 1024x600 {
-				clock-frequency = <51000000>;
-				hactive = <1024>;
-				vactive = <600>;
-				hfront-porch = <160>;
-				hsync-len = <20>;
-				hback-porch = <140>;
-				vfront-porch = <12>;
-				vsync-len = <3>;
-				vback-porch = <20>;
-				hsync-active = <0>;
-				vsync-active = <0>;
-				de-active = <1>;
-				pixelclk-active = <0>;
-			};
-		};
+	hdmi_con: connector {
+		compatible = "hdmi-connector";
+		type = "d";
 
 		port {
-			panel_in: endpoint {
+			hdmi_con_in: endpoint {
 				remote-endpoint = <&hdmi_out_con>;
 			};
 		};
@@ -304,19 +281,9 @@
 	status = "okay";
 };
 
-&hdmi_phy {
-	/*
-	 * H616 HDMI PHY needs dedicated analog rails; without these, DRM may
-	 * bind but the TMDS link can stay dark (backlight only symptom).
-	 */
-	avdd-0v9-supply = <&reg_dcdc1>;
-	avdd-1v8-supply = <&reg_aldo1>;
-	status = "okay";
-};
-
 &hdmi_out {
 	hdmi_out_con: endpoint {
-		remote-endpoint = <&panel_in>;
+		remote-endpoint = <&hdmi_con_in>;
 	};
 };
 
