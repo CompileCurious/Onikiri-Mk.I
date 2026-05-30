@@ -137,16 +137,23 @@ TMP_BOOT=$(mktemp -d)
 mount "${BOOT_DEV}" "${TMP_BOOT}"
 
 install -m644 "${KERNEL}" "${TMP_BOOT}/Image"
-install -m644 "${DTB}"    "${TMP_BOOT}/sun50i-h616-onikiri.dtb"
+mkdir -p "${TMP_BOOT}/dtb/allwinner"
+install -m644 "${DTB}" "${TMP_BOOT}/dtb/allwinner/sun50i-h616-onikiri.dtb"
+install -m644 "${DTB}" "${TMP_BOOT}/sun50i-h616-onikiri.dtb"
 install -m644 "${INITRAMFS}" "${TMP_BOOT}/initramfs.cpio.gz"
+install -m644 "${REPO_ROOT}/config/uboot/armbianEnv.txt" "${TMP_BOOT}/armbianEnv.txt"
 
 if command -v mkimage >/dev/null 2>&1; then
+    mkimage -A arm64 -O linux -T ramdisk -C gzip -d \
+        "${INITRAMFS}" \
+        "${TMP_BOOT}/uInitrd"
     mkimage -C none -A arm64 -T script -d \
         "${REPO_ROOT}/config/uboot/boot.cmd" \
         "${TMP_BOOT}/boot.scr"
 else
     log "[WARN] mkimage not found — copying boot.cmd as fallback"
     install -m644 "${REPO_ROOT}/config/uboot/boot.cmd" "${TMP_BOOT}/boot.cmd"
+    install -m644 "${INITRAMFS}" "${TMP_BOOT}/uInitrd"
 fi
 
 if [[ -f "${REPO_ROOT}/out/u-boot-sunxi-with-spl.bin" ]]; then

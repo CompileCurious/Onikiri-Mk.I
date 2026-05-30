@@ -1,0 +1,15 @@
+verbosity=7
+console=both
+bootlogo=false
+docker_optimizations=off
+
+# Onikiri initramfs + immutable rootfs flow
+rootdev=/dev/ram0
+rootfstype=ramfs
+
+# Use board DTB produced by this tree
+fdtfile=sun50i-h616-onikiri.dtb
+overlay_prefix=sun50i-h616
+
+# Force panel mode and carry existing Onikiri boot parameters
+extraargs=rdinit=/init rofs_device=/dev/mmcblk0p2 video=HDMI-A-1:1024x600@60e ignore_loglevel fbcon=map:0 drm.debug=0x3f zswap.enabled=1 zswap.compressor=lz4 usbcore.autosuspend=-1 coherent_pool=2M cma=32M panic=10

@@ -1,35 +1,89 @@
-# U-Boot boot script for Onikiri Mk.I (Allwinner H616 / BigTreeTech CB1)
-# Compiled to boot.scr by: mkimage -C none -A arm64 -T script -d boot.cmd boot.scr
-#
-# Boot flow:
-#   1. Load kernel Image from FAT partition
-#   2. Load DTB from FAT partition
-#   3. Set kernel command line (read-only squashfs root, fast-boot options)
-#   4. Boot via booti
+# Armbian sun50i-next style boot script adapted for Onikiri Mk.I.
+# Keep policy in armbianEnv.txt; keep script logic close to upstream flow.
 
-# ── Display / environment ─────────────────────────────────────────────────────
-# Force HDMI output mode for the internal 1024x600 panel.
-# Without this the DRM driver relies on EDID (which the internal panel
-# doesn't expose via HPD), and no mode is set — resulting in a blank screen.
-setenv bootargs "console=ttyS0,115200n8 console=tty1 \
-video=HDMI-A-1:1024x600@60e \
-root=/dev/ram0 rdinit=/init rofs_device=/dev/mmcblk0p2 \
-loglevel=7 ignore_loglevel \
-fbcon=map:0 drm.debug=0x3f \
-zswap.enabled=1 zswap.compressor=lz4 \
-usbcore.autosuspend=-1 \
-coherent_pool=2M \
-cma=32M \
-panic=10"
+setenv load_addr "0x45000000"
+setenv overlay_error "false"
+setenv rootdev "/dev/mmcblk0p1"
+setenv verbosity "1"
+setenv rootfstype "ext4"
+setenv console "both"
+setenv docker_optimizations "on"
+setenv bootlogo "false"
+setenv vendor "allwinner"
 
-# ── Load kernel, initramfs and DTB from FAT boot partition (mmcblk0p1) ───────────────
-mmc dev 0
-mmc part
+if test -z "${devtype}"; then setenv devtype mmc; fi
+if test -z "${devnum}"; then setenv devnum 0; fi
+if test -z "${prefix}"; then setenv prefix /; fi
+if test -z "${fdtdir}"; then setenv fdtdir "${prefix}dtb/${vendor}"; fi
 
-load mmc 0:1 ${kernel_addr_r}  Image
-load mmc 0:1 ${ramdisk_addr_r} initramfs.cpio.gz
-setenv ramdisk_size ${filesize}
-load mmc 0:1 ${fdt_addr_r}     sun50i-h616-onikiri.dtb
+if setexpr subfdt sub ${vendor}/ "" ${fdtfile}; then
+	setenv deffdt_file ${subfdt}
+fi
 
-# ── Boot ───────────────────────────────────────────────────────────────────────────
-booti ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr_r}
+setenv deffdt_dir "${prefix}dtb"
+
+if test -e ${devtype} ${devnum} ${prefix}armbianEnv.txt; then
+	load ${devtype} ${devnum} ${load_addr} ${prefix}armbianEnv.txt
+	env import -t ${load_addr} ${filesize}
+fi
+
+if setexpr subfdt sub ${vendor}/ "" ${fdtfile}; then
+	setenv fdtfile ${subfdt}
+fi
+
+if test -e ${devtype} ${devnum} "${fdtdir}/${fdtfile}"; then
+	echo "Load fdt: ${fdtdir}/${fdtfile}"
+else
+	if test -e ${devtype} ${devnum} "${deffdt_dir}/${fdtfile}"; then
+		setenv fdtdir "${deffdt_dir}"
+	else
+		if test -e ${devtype} ${devnum} "${deffdt_dir}/${vendor}/${deffdt_file}"; then
+			setenv fdtdir "${deffdt_dir}/${vendor}"
+			setenv fdtfile "${deffdt_file}"
+		else
+			if test -e ${devtype} ${devnum} "${deffdt_dir}/${deffdt_file}"; then
+				setenv fdtdir "${deffdt_dir}"
+				setenv fdtfile "${deffdt_file}"
+			fi
+		fi
+	fi
+fi
+
+if test "${console}" = "display" || test "${console}" = "both"; then setenv consoleargs "console=ttyS0,115200 console=tty1"; fi
+if test "${console}" = "serial"; then setenv consoleargs "console=ttyS0,115200"; fi
+if test "${bootlogo}" = "true"; then
+	setenv consoleargs "splash plymouth.ignore-serial-consoles ${consoleargs}"
+else
+	setenv consoleargs "splash=verbose ${consoleargs}"
+fi
+
+if test "${devtype}" = "mmc"; then part uuid mmc 0:1 partuuid; fi
+
+setenv bootargs "root=${rootdev} rootwait rootfstype=${rootfstype} ${consoleargs} consoleblank=0 loglevel=${verbosity} ubootpart=${partuuid} usb-storage.quirks=${usbstoragequirks} ${extraargs} ${extraboardargs}"
+
+if test "${docker_optimizations}" = "on"; then setenv bootargs "${bootargs} cgroup_enable=memory"; fi
+
+load ${devtype} ${devnum} ${fdt_addr_r} ${fdtdir}/${fdtfile}
+fdt addr ${fdt_addr_r}
+fdt resize 65536
+
+for overlay_file in ${overlays}; do
+	if load ${devtype} ${devnum} ${load_addr} ${fdtdir}/overlay/${overlay_prefix}-${overlay_file}.dtbo; then
+		fdt apply ${load_addr} || setenv overlay_error "true"
+	fi
+done
+
+for overlay_file in ${user_overlays}; do
+	if load ${devtype} ${devnum} ${load_addr} ${prefix}overlay-user/${overlay_file}.dtbo; then
+		fdt apply ${load_addr} || setenv overlay_error "true"
+	fi
+done
+
+if test "${overlay_error}" = "true"; then
+	load ${devtype} ${devnum} ${fdt_addr_r} ${fdtdir}/${fdtfile}
+fi
+
+load ${devtype} ${devnum} ${ramdisk_addr_r} ${prefix}uInitrd
+load ${devtype} ${devnum} ${kernel_addr_r} ${prefix}Image
+
+booti ${kernel_addr_r} ${ramdisk_addr_r} ${fdt_addr_r}
