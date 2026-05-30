@@ -69,7 +69,7 @@ fi
 # initramfs ramfs, so we never hit read-only SquashFS or failed userspace
 # init scripts. mmcblk0p1 must exist if mmcblk0p2 was found above.
 # /mnt is pre-created in the cpio stage by build.sh.
-if mount -t vfat /dev/mmcblk0p1 /mnt -o rw,noatime 2>/dev/null; then
+if mount -t vfat /dev/mmcblk0p1 /mnt -o rw,noatime; then
     /bin/busybox dmesg > /mnt/dmesg.txt
     /bin/busybox sync
     umount /mnt 2>/dev/null || true
