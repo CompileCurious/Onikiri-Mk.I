@@ -114,9 +114,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out/linux
-          key: linux-6.6.30-defconfig-v10
+          key: linux-6.6.30-defconfig-v11
           restore-keys: |
-            linux-6.6.30-defconfig-v10
+            linux-6.6.30-defconfig-v11
 
       # ── Build ────────────────────────────────────────────────────────────
       - name: Build Onikiri image

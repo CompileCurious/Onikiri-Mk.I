@@ -286,6 +286,16 @@
 	status = "okay";
 };
 
+&hdmi_phy {
+	/*
+	 * H616 HDMI PHY needs dedicated analog rails; without these, DRM may
+	 * bind but the TMDS link can stay dark (backlight only symptom).
+	 */
+	avdd-0v9-supply = <&reg_dcdc1>;
+	avdd-1v8-supply = <&reg_aldo1>;
+	status = "okay";
+};
+
 &hdmi_out {
 	hdmi_out_con: endpoint {
 		remote-endpoint = <&hdmi_con_in>;
