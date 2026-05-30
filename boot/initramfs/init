@@ -68,9 +68,10 @@ fi
 # p1 (vfat, ONIKIRI) is readable on any OS. Write dmesg here, in the
 # initramfs ramfs, so we never hit read-only SquashFS or failed userspace
 # init scripts. mmcblk0p1 must exist if mmcblk0p2 was found above.
-mkdir -p /mnt
+# /mnt is pre-created in the cpio stage by build.sh.
 if mount -t vfat /dev/mmcblk0p1 /mnt -o rw,noatime 2>/dev/null; then
-    dmesg > /mnt/dmesg.txt 2>/dev/null && sync
+    /bin/busybox dmesg > /mnt/dmesg.txt
+    /bin/busybox sync
     umount /mnt 2>/dev/null || true
     echo "dmesg.txt written to FAT boot partition"
 else

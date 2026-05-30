@@ -534,7 +534,7 @@ build_initramfs() {
     else die "ARM64 busybox-static not found in rootfs_stage — run assemble_rootfs first"
     fi
     install -m755 "${BUSYBOX_ARM64}" "${INITRAMFS_STAGE}/bin/busybox"
-    for applet in sh mount umount switch_root; do
+    for applet in sh mount umount switch_root dmesg sync; do
         ln -sf /bin/busybox "${INITRAMFS_STAGE}/bin/${applet}"
     done
     ln -sf /bin/busybox "${INITRAMFS_STAGE}/sbin/switch_root"
