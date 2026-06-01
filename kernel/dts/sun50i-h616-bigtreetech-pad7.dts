@@ -28,8 +28,9 @@
 
 	/* Backlight control for 7" LCD */
 	backlight: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm 0 50000 0>;
+		compatible = "gpio-backlight";
+		gpios = <&pio 7 19 GPIO_ACTIVE_HIGH>; /* PH19 */
+		default-on;
 		brightness-levels = <0 10 20 30 40 50 60 70 80 90 100>;
 		default-brightness-level = <8>;
 		power-supply = <&reg_dldo1>;
@@ -57,13 +58,6 @@
 		touchscreen-size-x = <1024>;
 		touchscreen-size-y = <600>;
 	};
-};
-
-/* PWM for backlight control */
-&pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm0_pin>;
-	status = "okay";
 };
 
 /* Enable USB ports */
