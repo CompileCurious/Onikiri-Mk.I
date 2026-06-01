@@ -33,7 +33,7 @@ ARCH=arm64
 JOBS="${JOBS:-$(nproc)}"
 
 KERNEL_REPO="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
-KERNEL_TAG="v6.6.30"
+KERNEL_TAG="v6.10.14"        # H616 support added in v6.7; v6.10 is LTS with mature H616/CB1 support
 
 UBOOT_REPO="https://github.com/u-boot/u-boot.git"
 UBOOT_TAG="v2024.10"         # bigtreetech_cb1_defconfig merged ~Aug 2024; v2024.10 is first quarterly release with it
