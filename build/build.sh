@@ -206,8 +206,8 @@ build_kernel() {
             "${KERNEL_REPO}" "${KERNEL_SRC}"
         
         # DISABLED: Skip experimental H616 hardware patches — use mainline DTBs instead
-        # These patches were causing display issues. Mainline kernel v6.6.30+ has
-        # basic H616 support; use vendor DTBs for working hardware initialization.
+        # These patches were causing display issues. Mainline kernel v6.10+ has
+        # complete H616 support (added in v6.7); use vendor DTBs for working hardware.
         # log "Applying H616 hardware patches..."
         # for patch in "${REPO_ROOT}"/kernel/patches/*.patch; do
         #     [[ -f "${patch}" ]] || continue

@@ -1,7 +1,7 @@
 # Onikiri Mk.I — Minimal kernel defconfig for Allwinner H616 (BTT CB1)
 # Architecture: ARM64 / Cortex-A53
 # Target: BigTreeTech Pad 7 + CB1 module
-# Kernel: Linux 6.6 LTS (or later 6.x)
+# Kernel: Linux 6.10 LTS (H616 mainline support requires v6.7+)
 # Build: arm64 cross-compile
 
 # ── Core Architecture ──────────────────────────────────────────────────────────
