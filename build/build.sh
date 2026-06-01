@@ -205,31 +205,39 @@ build_kernel() {
         git clone --depth=1 --branch="${KERNEL_TAG}" \
             "${KERNEL_REPO}" "${KERNEL_SRC}"
         
-        # Apply H616 hardware support patches (HDMI, DE3, PWM)
-        log "Applying H616 hardware patches..."
-        for patch in "${REPO_ROOT}"/kernel/patches/*.patch; do
-            [[ -f "${patch}" ]] || continue
-            log "  → $(basename "${patch}")"
-            if ! patch -p1 -d "${KERNEL_SRC}" < "${patch}"; then
-                die "Failed to apply patch: $(basename "${patch}")"
-            fi
-        done
+        # DISABLED: Skip experimental H616 hardware patches — use mainline DTBs instead
+        # These patches were causing display issues. Mainline kernel v6.6.30+ has
+        # basic H616 support; use vendor DTBs for working hardware initialization.
+        # log "Applying H616 hardware patches..."
+        # for patch in "${REPO_ROOT}"/kernel/patches/*.patch; do
+        #     [[ -f "${patch}" ]] || continue
+        #     log "  → $(basename "${patch}")"
+        #     if ! patch -p1 -d "${KERNEL_SRC}" < "${patch}"; then
+        #         die "Failed to apply patch: $(basename "${patch}")"
+        #     fi
+        # done
+        log "Using mainline kernel without custom patches for Pad7 compatibility"
     fi
 
     # Copy our defconfig
     cp "${REPO_ROOT}/kernel/h616_onikiri_defconfig" \
         "${KERNEL_SRC}/arch/arm64/configs/h616_onikiri_defconfig"
 
-    # Copy our DTS and HDMI overlay
-    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-onikiri.dts" \
+    # Copy mainline H616/CB1 base DTSIs and Pad7 board DTS
+    log "Installing mainline H616/CB1 DTB sources and Pad7 board DTS"
+    cp "${REPO_ROOT}/kernel/dts/sun50i-h616.dtsi" \
         "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
-    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-hdmi.dtsi" \
+    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-cpu-opp.dtsi" \
+        "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
+    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-bigtreetech-cb1.dtsi" \
+        "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
+    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-bigtreetech-pad7.dts" \
         "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
 
-    # Add board to allwinner DTS Makefile if not present
+    # Add Pad7 board to allwinner DTS Makefile if not present
     DTSMK="${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/Makefile"
-    grep -q "sun50i-h616-onikiri" "${DTSMK}" || \
-        echo "dtb-\$(CONFIG_ARCH_SUNXI) += sun50i-h616-onikiri.dtb" >> "${DTSMK}"
+    grep -q "sun50i-h616-bigtreetech-pad7" "${DTSMK}" || \
+        echo "dtb-\$(CONFIG_ARCH_SUNXI) += sun50i-h616-bigtreetech-pad7.dtb" >> "${DTSMK}"
 
     make -C "${KERNEL_SRC}" \
         ARCH="${ARCH}" \
@@ -276,7 +284,7 @@ build_kernel() {
 
     log "Kernel build complete"
     log "  Image: ${KERNEL_SRC}/arch/arm64/boot/Image"
-    log "  DTB:   ${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb"
+    log "  DTB:   ${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-pad7.dtb"
 }
 
 # ── RTL8821CS out-of-tree Wi-Fi driver ────────────────────────────────────────
@@ -551,7 +559,7 @@ build_image() {
     log "Building microSD image: ${FINAL_IMG}"
     "${REPO_ROOT}/build/mkimage.sh" \
         --kernel    "${KERNEL_SRC}/arch/arm64/boot/Image" \
-        --dtb       "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-onikiri.dtb" \
+        --dtb       "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-pad7.dtb" \
         --initramfs "${BUILD_DIR}/initramfs.cpio.gz" \
         --rootfs    "${SQUASHFS_IMG}" \
         --output    "${FINAL_IMG}"

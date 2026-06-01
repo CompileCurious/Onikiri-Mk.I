@@ -138,10 +138,9 @@ mount "${BOOT_DEV}" "${TMP_BOOT}"
 
 install -m644 "${KERNEL}" "${TMP_BOOT}/Image"
 mkdir -p "${TMP_BOOT}/dtb/allwinner"
-install -m644 "${DTB}" "${TMP_BOOT}/dtb/allwinner/sun50i-h616-onikiri.dtb"
-install -m644 "${DTB}" "${TMP_BOOT}/dtb/allwinner/sun50i-h616-bigtreetech-cb1-sd.dtb"
-install -m644 "${DTB}" "${TMP_BOOT}/sun50i-h616-onikiri.dtb"
-install -m644 "${DTB}" "${TMP_BOOT}/sun50i-h616-bigtreetech-cb1-sd.dtb"
+# Install Pad7 DTB in vendor-expected locations
+install -m644 "${DTB}" "${TMP_BOOT}/dtb/allwinner/sun50i-h616-bigtreetech-pad7.dtb"
+install -m644 "${DTB}" "${TMP_BOOT}/sun50i-h616-bigtreetech-pad7.dtb"
 install -m644 "${INITRAMFS}" "${TMP_BOOT}/initramfs.cpio.gz"
 install -m644 "${REPO_ROOT}/config/uboot/armbianEnv.txt" "${TMP_BOOT}/armbianEnv.txt"
 
