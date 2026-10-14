@@ -113,10 +113,14 @@ jobs:
         id: cache-kernel
         uses: actions/cache@v4
         with:
-          path: out/linux
-          key: linux-6.6.30-defconfig-v21
-          restore-keys: |
-            linux-6.6.30-defconfig-v21
+          path: out/linux-v6.18.56
+          key: linux-v6.18.56-h616-display-1f0b111-${{ hashFiles('kernel/h616_onikiri_defconfig', 'kernel/dts/sun50i-h616-bigtreetech-pad7.dts', 'kernel/patches/003-dw-hdmi-force-connected-property.patch') }}
+
+      - name: Cache H616 display patches
+        uses: actions/cache@v4
+        with:
+          path: out/armbian-patches-1f0b11116c21
+          key: armbian-h616-display-1f0b111
 
       # ── Build ────────────────────────────────────────────────────────────
       - name: Build Onikiri image

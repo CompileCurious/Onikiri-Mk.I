@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-/*
- * Device Tree for BigTreeTech Pad 7 (CB1 module + 7" touchscreen)
- * Based on mainline sun50i-h616-bigtreetech-cb1.dtsi
- * 
- * Display: 7" 1024x600 IPS LCD connected via internal HDMI
- * Touch: Goodix GT911 on I2C1
- */
+/* Pad 7 carrier-specific devices layered over the upstream CB1 module DTSI. */
 
 /dts-v1/;
 
-#include "sun50i-h616-bigtreetech-cb1.dtsi"
-
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include "sun50i-h616-bigtreetech-cb1.dtsi"
 
 / {
 	model = "BigTreeTech Pad 7";
@@ -26,7 +19,18 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	/* Backlight control for 7" LCD */
+	connector {
+		compatible = "hdmi-connector";
+		type = "d";
+
+		port {
+			hdmi_con_in: endpoint {
+				remote-endpoint = <&hdmi_out_con>;
+			};
+		};
+	};
+
+	/* Pad 7 LCD backlight enable. */
 	backlight: backlight {
 		compatible = "gpio-backlight";
 		gpios = <&pio 7 19 GPIO_ACTIVE_HIGH>; /* PH19 */
@@ -57,6 +61,22 @@
 		reset-gpios = <&pio 7 3 GPIO_ACTIVE_HIGH>; /* PH3 */
 		touchscreen-size-x = <1024>;
 		touchscreen-size-y = <600>;
+	};
+};
+
+&de {
+	status = "okay";
+};
+
+&hdmi {
+	hvcc-supply = <&reg_aldo1>;
+	allwinner,force-connected;
+	status = "okay";
+};
+
+&hdmi_out {
+	hdmi_out_con: endpoint {
+		remote-endpoint = <&hdmi_con_in>;
 	};
 };
 

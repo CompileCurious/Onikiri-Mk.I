@@ -12,4 +12,4 @@ fdtfile=sun50i-h616-bigtreetech-pad7.dtb
 overlay_prefix=sun50i-h616
 
 # Vendor-style boot parameters
-extraargs=rdinit=/init rofs_device=/dev/mmcblk0p2 quiet splash loglevel=4 rootwait
+extraargs=rdinit=/init rofs_device=/dev/mmcblk0p2 loglevel=7 rootwait video=HDMI-A-1:1024x600@60e

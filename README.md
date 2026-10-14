@@ -99,6 +99,9 @@ cd trusted-firmware-a && make PLAT=sun50i_h616 DEBUG=0 bl31
 # Full build (kernel + rootfs + image)
 ./build/build.sh
 
+# Compile the patched Pad 7 device tree without building an image
+./build/build.sh --dtb-only
+
 # Outputs:
 #   out/onikiri-mkI-YYYYMMDD.img   — flash with Etcher
 ```

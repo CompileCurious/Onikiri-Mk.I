@@ -1,7 +1,7 @@
 # Onikiri Mk.I — Minimal kernel defconfig for Allwinner H616 (BTT CB1)
 # Architecture: ARM64 / Cortex-A53
 # Target: BigTreeTech Pad 7 + CB1 module
-# Kernel: Linux 6.10 LTS (H616 mainline support requires v6.7+)
+# Kernel: Linux 6.18 LTS
 # Build: arm64 cross-compile
 
 # ── Core Architecture ──────────────────────────────────────────────────────────
@@ -88,11 +88,12 @@ CONFIG_DRM_SUN8I_TCON_TOP=y
 # DRM_SUN8I_DW_HDMI covers: H3, H5, A64, H6, H616 (via H6 fallback compat).
 # DRM_SUN8I_DW_HDMI selects DRM_DW_HDMI automatically.
 CONFIG_DRM_SUN8I_DW_HDMI=y
-# H6-compatible HDMI PHY — H616 variant tables added by patch 001.
-CONFIG_DRM_SUN50I_HDMI_PHY=y
+# H616 PHY tables are added to the Allwinner DW-HDMI driver by the pinned patch series.
+# Panfrost provides Mesa GLES rendering on the H616 Mali-G31.
+CONFIG_DRM_PANFROST=y
 # Enable KMS framebuffer for SDL2/Kivy DRM backend
 CONFIG_DRM_KMS_HELPER=y
-CONFIG_DRM_KMS_FB_HELPER=y
+CONFIG_DRM_SUN50I_PLANES=y
 # ── Virtual Terminal / Framebuffer Console ──────────────────────────────────────────────
 # CONFIG_VT is required for /dev/tty1 to exist and for fbcon to attach
 # the DRM framebuffer to the screen. Without it, console=tty1 is silently

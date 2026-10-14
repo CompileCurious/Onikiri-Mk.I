@@ -14,7 +14,7 @@
 #   Python 3.10+ (for supervisor/UI test)
 #
 # Usage:
-#   ./build/build.sh [--clean] [--kernel-only] [--image-only]
+#   ./build/build.sh [--clean] [--dtb-only] [--kernel-only] [--image-only]
 #
 # Output:
 #   out/onikiri-mkI-YYYYMMDD.img  — ready to flash with Etcher
@@ -23,7 +23,9 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${REPO_ROOT}/out"
-KERNEL_SRC="${BUILD_DIR}/linux"
+KERNEL_TAG="v6.18.56"
+KERNEL_SRC="${BUILD_DIR}/linux-${KERNEL_TAG}"
+PAD7_DTB="${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-pad7.dtb"
 ROOTFS_STAGE="${BUILD_DIR}/rootfs_stage"
 SQUASHFS_IMG="${BUILD_DIR}/rootfs.sqfs"
 FINAL_IMG="${BUILD_DIR}/onikiri-mkI-$(date +%Y%m%d).img"
@@ -33,8 +35,10 @@ ARCH=arm64
 JOBS="${JOBS:-$(nproc)}"
 
 KERNEL_REPO="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
-KERNEL_TAG="v6.10.14"        # H616 support added in v6.7; v6.10 is LTS with mature H616/CB1 support
-
+ARMBIAN_BUILD_REPO="https://github.com/armbian/build.git"
+ARMBIAN_BUILD_REF="1f0b11116c21ec5781cfe271091fd189d3b869ba"
+ARMBIAN_PATCH_PATH="patch/kernel/archive/sunxi-6.18/patches.drm"
+ARMBIAN_PATCH_SRC="${BUILD_DIR}/armbian-patches-${ARMBIAN_BUILD_REF:0:12}"
 UBOOT_REPO="https://github.com/u-boot/u-boot.git"
 UBOOT_TAG="v2024.10"         # bigtreetech_cb1_defconfig merged ~Aug 2024; v2024.10 is first quarterly release with it
 
@@ -46,12 +50,14 @@ ATF_TAG="v2.10.0"            # LTS release; produces bl31.bin for sun50i_h616
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 OPT_CLEAN=0
+OPT_DTB_ONLY=0
 OPT_KERNEL_ONLY=0
 OPT_IMAGE_ONLY=0
 
 for arg in "$@"; do
     case "$arg" in
         --clean)       OPT_CLEAN=1 ;;
+        --dtb-only)    OPT_DTB_ONLY=1 ;;
         --kernel-only) OPT_KERNEL_ONLY=1 ;;
         --image-only)  OPT_IMAGE_ONLY=1 ;;
         *) echo "Unknown option: $arg" >&2; exit 1 ;;
@@ -68,9 +74,23 @@ require_tool() {
 
 # ── Checks ────────────────────────────────────────────────────────────────────
 check_deps() {
+    if [[ "${OPT_DTB_ONLY}" -eq 1 ]]; then
+        log "Checking DTB build dependencies"
+        require_tool gcc
+        require_tool make
+        require_tool git
+        require_tool patch
+        require_tool bison
+        require_tool flex
+        require_tool perl
+        return
+    fi
+
     log "Checking build dependencies"
     require_tool "${CROSS_COMPILE}gcc"
+    require_tool git
     require_tool make
+    require_tool patch
     require_tool swig
     require_tool mksquashfs
     require_tool parted
@@ -204,33 +224,17 @@ build_kernel() {
     if [[ ! -d "${KERNEL_SRC}" ]]; then
         git clone --depth=1 --branch="${KERNEL_TAG}" \
             "${KERNEL_REPO}" "${KERNEL_SRC}"
-        
-        # DISABLED: Skip experimental H616 hardware patches — use mainline DTBs instead
-        # These patches were causing display issues. Mainline kernel v6.10+ has
-        # complete H616 support (added in v6.7); use vendor DTBs for working hardware.
-        # log "Applying H616 hardware patches..."
-        # for patch in "${REPO_ROOT}"/kernel/patches/*.patch; do
-        #     [[ -f "${patch}" ]] || continue
-        #     log "  → $(basename "${patch}")"
-        #     if ! patch -p1 -d "${KERNEL_SRC}" < "${patch}"; then
-        #         die "Failed to apply patch: $(basename "${patch}")"
-        #     fi
-        # done
-        log "Using mainline kernel without custom patches for Pad7 compatibility"
     fi
+
+    apply_h616_display_patches
 
     # Copy our defconfig
     cp "${REPO_ROOT}/kernel/h616_onikiri_defconfig" \
         "${KERNEL_SRC}/arch/arm64/configs/h616_onikiri_defconfig"
 
-    # Copy mainline H616/CB1 base DTSIs and Pad7 board DTS
-    log "Installing mainline H616/CB1 DTB sources and Pad7 board DTS"
-    cp "${REPO_ROOT}/kernel/dts/sun50i-h616.dtsi" \
-        "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
-    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-cpu-opp.dtsi" \
-        "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
-    cp "${REPO_ROOT}/kernel/dts/sun50i-h616-bigtreetech-cb1.dtsi" \
-        "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
+    # Keep the upstream H616 SoC and CB1 module DTSI intact. Only the Pad 7
+    # carrier-specific board definition is maintained by this project.
+    log "Installing Pad 7 board DTS against upstream H616/CB1 definitions"
     cp "${REPO_ROOT}/kernel/dts/sun50i-h616-bigtreetech-pad7.dts" \
         "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/"
 
@@ -255,6 +259,12 @@ build_kernel() {
         log "DTB build failed — full log:"
         cat "${BUILD_DIR}/dtbs-build.log" >&2
         die "DTB build failed (check DTS errors above)"
+    fi
+
+    if [[ "${OPT_DTB_ONLY}" -eq 1 ]]; then
+        [[ -s "${PAD7_DTB}" ]] || die "Pad 7 DTB was not generated: ${PAD7_DTB}"
+        log "Pad 7 DTB ready: ${PAD7_DTB}"
+        return
     fi
 
     make -C "${KERNEL_SRC}" \
@@ -285,6 +295,49 @@ build_kernel() {
     log "Kernel build complete"
     log "  Image: ${KERNEL_SRC}/arch/arm64/boot/Image"
     log "  DTB:   ${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-pad7.dtb"
+}
+
+prepare_armbian_patch_source() {
+    if [[ ! -d "${ARMBIAN_PATCH_SRC}/.git" ]]; then
+        git clone --filter=blob:none --no-checkout --depth=1 \
+            "${ARMBIAN_BUILD_REPO}" "${ARMBIAN_PATCH_SRC}"
+        git -C "${ARMBIAN_PATCH_SRC}" sparse-checkout init --cone
+        git -C "${ARMBIAN_PATCH_SRC}" sparse-checkout set \
+            "${ARMBIAN_PATCH_PATH}"
+        git -C "${ARMBIAN_PATCH_SRC}" fetch --depth=1 origin \
+            "${ARMBIAN_BUILD_REF}"
+        git -C "${ARMBIAN_PATCH_SRC}" checkout --detach \
+            "${ARMBIAN_BUILD_REF}"
+    fi
+
+    local actual_ref
+    actual_ref=$(git -C "${ARMBIAN_PATCH_SRC}" rev-parse HEAD)
+    [[ "${actual_ref}" == "${ARMBIAN_BUILD_REF}" ]] || \
+        die "Armbian patch checkout mismatch: expected ${ARMBIAN_BUILD_REF}, found ${actual_ref}"
+}
+
+apply_h616_display_patches() {
+    local marker="${KERNEL_SRC}/.onikiri-h616-display-patches-${ARMBIAN_BUILD_REF}"
+    [[ -f "${marker}" ]] && return 0
+
+    prepare_armbian_patch_source
+    local patch_dir="${ARMBIAN_PATCH_SRC}/${ARMBIAN_PATCH_PATH}"
+    local patch_file
+    for patch_file in "${patch_dir}"/*.patch; do
+        case "$(basename "${patch_file}")" in
+            0043-*) continue ;;
+        esac
+        log "Applying H616 display patch: $(basename "${patch_file}")"
+        if ! patch --batch --forward -p1 -d "${KERNEL_SRC}" < "${patch_file}"; then
+            die "H616 display patch failed: $(basename "${patch_file}"); remove ${KERNEL_SRC} and rebuild"
+        fi
+    done
+
+    local force_connected_patch="${REPO_ROOT}/kernel/patches/003-dw-hdmi-force-connected-property.patch"
+    if ! patch --batch --forward -p1 -d "${KERNEL_SRC}" < "${force_connected_patch}"; then
+        die "Failed to apply internal HDMI force-connected support; remove ${KERNEL_SRC} and rebuild"
+    fi
+    touch "${marker}"
 }
 
 # ── RTL8821CS out-of-tree Wi-Fi driver ────────────────────────────────────────
@@ -559,7 +612,7 @@ build_image() {
     log "Building microSD image: ${FINAL_IMG}"
     "${REPO_ROOT}/build/mkimage.sh" \
         --kernel    "${KERNEL_SRC}/arch/arm64/boot/Image" \
-        --dtb       "${KERNEL_SRC}/arch/arm64/boot/dts/allwinner/sun50i-h616-bigtreetech-pad7.dtb" \
+        --dtb       "${PAD7_DTB}" \
         --initramfs "${BUILD_DIR}/initramfs.cpio.gz" \
         --rootfs    "${SQUASHFS_IMG}" \
         --output    "${FINAL_IMG}"
@@ -573,6 +626,12 @@ main() {
 
     if [[ "${OPT_CLEAN}" -eq 1 ]]; then
         do_clean
+        exit 0
+    fi
+
+    if [[ "${OPT_DTB_ONLY}" -eq 1 ]]; then
+        build_kernel
+        log "DTB validation complete; no image was created."
         exit 0
     fi
 
