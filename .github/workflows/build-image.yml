@@ -156,8 +156,9 @@ jobs:
           SRC="$(ls out/onikiri-mkI-*.img | head -1)"
           DEST="out/${{ steps.date.outputs.IMG_NAME }}"
           if [[ "$SRC" != "$DEST" ]]; then
-            mv "$SRC" "$DEST"
+            sudo mv "$SRC" "$DEST"
           fi
+          sudo chown "$USER":"$USER" "$DEST"
           echo "IMAGE_PATH=${DEST}" >> "$GITHUB_ENV"
 
       # ── Upload build artifact (always kept for 7 days) ───────────────────
